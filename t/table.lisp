@@ -8,7 +8,13 @@
   (:use :cl
         :integral
         :integral.table
-        :cl-test-more))
+        :cl-test-more)
+  (:import-from :integral-test.init
+                :connect-to-testdb)
+  (:import-from :integral.column
+                :table-column-definition)
+  (:import-from :integral.table
+                :initializedp))
 (in-package :integral-test.table)
 
 (plan nil)
@@ -132,5 +138,67 @@
 
   (is (table-definition 'tweet)
       "CREATE TABLE `tweets` (`id` BIGINT AUTO_INCREMENT, `status` TEXT, `user` VARCHAR(64), PRIMARY KEY (`id`), UNIQUE (`id`), UNIQUE (`status`, `user`))"))
+
+(diag ":generate-slots t")
+
+(setf (find-class 'tweet) nil)
+(defclass tweet () ()
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:generate-slots t))
+
+(is (c2mop:class-direct-slots (find-class 'tweet))
+    nil
+    "No slots.")
+
+(is-error (make-instance 'tweet)
+          'connection-not-established-error
+          "Can't allocate an instance before any db connections are established.")
+
+(connect-to-testdb)
+
+(execute-sql "CREATE TABLE tweets (id INTEGER PRIMERY KEY, status TEXT, user VARCHAR(64))")
+
+(ok (make-instance 'tweet))
+
+(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+  (is (length slots) 3)
+  (ok (every (lambda (slot)
+               (typep slot 'table-column-definition))
+             slots)))
+
+;; Redefinition
+
+(defclass tweet () ()
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:generate-slots t))
+
+(is (c2mop:class-direct-slots (find-class 'tweet))
+    nil
+    "No slots, again.")
+(ok (not (initializedp (find-class 'tweet))))
+(ok (make-instance 'tweet))
+
+(defclass tweet ()
+  ((user :accessor tweet-user))
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:generate-slots t))
+
+(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+  (is (length slots) 1))
+
+(ok (make-instance 'tweet))
+
+(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+  (is (length slots) 3)
+  (ok (every (lambda (slot)
+               (typep slot 'table-column-definition))
+             slots))
+  (is (c2mop:slot-definition-name (car slots))
+      'user)
+  (is (c2mop:slot-definition-readers (car slots))
+      '(tweet-user)))
 
 (finalize)

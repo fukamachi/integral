@@ -15,7 +15,8 @@
                 :auto-increment-p
                 :primary-key-p
                 :ghost-slot-p
-                :column-info-for-create-table)
+                :column-info-for-create-table
+                :slot-definition-to-plist)
   (:import-from :integral.util
                 :symbol-name-literally
                 :class-inherit-p)
@@ -50,14 +51,32 @@ If you want to use another class, specify it as a superclass in the usual way.")
          :initarg :keys)
    (table-name :type (proper-list 'string)
                :initarg :table-name
-               :initform nil))
+               :initform nil)
+   (generate-slots :type (proper-list 'boolean)
+                   :initarg :generate-slots
+                   :initform nil)
+   (%initialized :type (proper-list 'boolean)
+                 :initform nil
+                 :accessor initializedp))
   (:documentation "Metaclass to define classes for your database-access objects as regular CLOS classes."))
+
+(defmethod allocate-instance :before ((class dao-table-class) &key)
+  (unless (initializedp class)
+    (initialize-dao-table-class class)))
 
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
   (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
     (setf (getf initargs :direct-superclasses)
           (cons (find-class 'dao-class) direct-superclasses)))
   (apply #'call-next-method class initargs))
+
+(defmethod initialize-instance :after ((class dao-table-class) &key)
+  (unless (slot-value class 'generate-slots)
+    (setf (initializedp class) t)))
+
+(defmethod reinitialize-instance :after ((class dao-table-class) &key)
+  (when (car (slot-value class 'generate-slots))
+    (setf (initializedp class) nil)))
 
 (defmethod c2mop:direct-slot-definition-class ((class dao-table-class) &key)
   'table-column-definition)
@@ -180,3 +199,38 @@ If you want to use another class, specify it as a superclass in the usual way.")
                         missing-slots
                         (class-name class)
                         (table-name class)))))))
+
+(defgeneric initialize-dao-table-class (class)
+  (:method ((class dao-table-class))
+    (when (initializedp class)
+      (return-from initialize-dao-table-class))
+
+    (let ((db-columns (retrieve-table-column-definitions-by-name
+                       (get-connection)
+                       (table-name class)))
+          (package (symbol-package (class-name class))))
+      (c2mop:ensure-class-using-class
+       class
+       (class-name class)
+       :direct-superclasses (delete-duplicates
+                             (mapcar #'class-name (c2mop:class-direct-superclasses class))
+                             :test #'eq
+                             :from-end t)
+       :direct-slots
+       (delete-duplicates
+        (append
+         (mapcar #'slot-definition-to-plist (c2mop:class-direct-slots class))
+         (mapcar (lambda (column)
+                   (destructuring-bind (name &key type not-null primary-key) column
+                     (declare (ignore type))
+                     (list :name (intern (string-upcase name) package)
+                           :not-null not-null
+                           :primary-key primary-key)))
+                 db-columns))
+        :test #'eq
+        :key #'cadr
+        :from-end t)
+       :metaclass (class-name (class-of class))
+       :generate-slots '(t)))
+
+    (setf (initializedp class) t)))

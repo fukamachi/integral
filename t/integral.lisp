@@ -12,12 +12,12 @@
                 :insert-sql
                 :update-sql
                 :delete-sql
-                :find-sql))
+                :find-sql)
+  (:import-from :integral-test.init
+                :connect-to-testdb))
 (in-package :integral-test)
 
 (plan nil)
-
-(disconnect-toplevel)
 
 (when (find-class 'tweet nil)
   (setf (find-class 'tweet) nil))
@@ -58,11 +58,7 @@
     (is (find-sql (find-class 'tweet) 1)
         "SELECT * FROM `tweets` WHERE (`id` = 1) LIMIT 1")))
 
-(defvar *db-path* (asdf:system-relative-pathname :integral #P"t/test.db"))
-(when (uiop:file-exists-p *db-path*)
-  (delete-file *db-path*))
-
-(ok (connect-toplevel :sqlite3 :database-name *db-path*))
+(connect-to-testdb)
 
 (execute-sql (table-definition 'tweet))
 

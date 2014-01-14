@@ -16,8 +16,15 @@
                 :type-missing-error)
   (:import-from :closer-mop
                 :standard-direct-slot-definition
+                :standard-slot-definition
                 :slot-definition-name
-                :slot-definition-type))
+                :slot-definition-type
+                :slot-definition-initform
+                :slot-definition-initfunction
+                :slot-definition-allocation
+                :slot-definition-initargs
+                :slot-definition-readers
+                :slot-definition-writers))
 (in-package :integral.column)
 
 (cl-syntax:use-syntax :annot)
@@ -84,3 +91,15 @@
           ,@(if (slot-boundp column 'default)
                 `(:default ,default)
                 nil))))))
+
+@export
+(defgeneric slot-definition-to-plist (slot)
+  (:method ((slot standard-slot-definition))
+    (list :name (slot-definition-name slot)
+          :initform (slot-definition-initform slot)
+          :initfunction (slot-definition-initfunction slot)
+          :type (slot-definition-type slot)
+          :allocation (slot-definition-allocation slot)
+          :initargs (slot-definition-initargs slot)
+          :readers (slot-definition-readers slot)
+          :writers (slot-definition-writers slot))))

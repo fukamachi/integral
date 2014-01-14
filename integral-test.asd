@@ -16,7 +16,8 @@
                :uiop)
   :components ((:module "t"
                 :components
-                ((:file "table")
+                ((:file "init")
+                 (:file "table")
                  (:file "integral"))))
 
   :defsystem-depends-on (:cl-test-more)
