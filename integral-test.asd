@@ -16,7 +16,8 @@
                :uiop)
   :components ((:module "t"
                 :components
-                ((:file "integral"))))
+                ((:file "table")
+                 (:file "integral"))))
 
   :defsystem-depends-on (:cl-test-more)
   :perform (test-op :after (op c)
