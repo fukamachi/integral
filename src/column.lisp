@@ -49,27 +49,30 @@
           :documentation "Option to specify slots as ghost slots. Ghost slots do not depend on a database.")))
 
 (defmethod initialize-instance :after ((column table-column-definition) &key)
-  (when (and (slot-boundp column 'col-type)
-             (eq (slot-value column 'col-type) 'serial))
+  (when (eq (table-column-type column) 'serial)
     (setf (auto-increment-p column) t)))
 
-(defgeneric column-name (column)
+(defgeneric table-column-name (column)
   (:method ((column table-column-definition))
     (c2mop:slot-definition-name column)))
+
+(defgeneric table-column-type (column)
+  (:method ((column table-column-definition))
+    (if (slot-boundp column 'col-type)
+        (slot-value column 'col-type)
+        (c2mop:slot-definition-type column))))
 
 @export
 (defgeneric column-info-for-create-table (column)
   (:method ((column table-column-definition))
-    (with-slots (col-type primary-key auto-increment not-null unique default)
+    (with-slots (primary-key auto-increment not-null unique default)
         column
-      (let ((col-type (if (slot-boundp column 'col-type)
-                          col-type
-                          (c2mop:slot-definition-type column))))
+      (let ((col-type (table-column-type column)))
         (when (eq col-type t)
           (error 'type-missing-error
                  :slot-name (c2mop:slot-definition-name column)))
 
-        `(,(column-name column)
+        `(,(table-column-name column)
           :type ,(column-type col-type)
           :primary-key ,primary-key
           :auto-increment ,(if (eq (database-type) :postgres)
