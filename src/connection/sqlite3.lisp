@@ -34,6 +34,6 @@
                               :type (if pos
                                         (subseq type 0 (1- pos))
                                         type)
-                              :not-null (getf column :|notnull|)
+                              :not-null (not (= (getf column :|notnull|) 0))
                               :primary-key (= (getf column :|pk|) 0))))
         (error "Table \"~A\" doesn't exist." table-name))))
