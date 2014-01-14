@@ -72,11 +72,16 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (apply #'call-next-method class name keys))
 
 (defun contains-class-or-subclasses (class target-classes)
-  (let ((class (find-class class)))
+  (let ((class (if (typep class 'class)
+                   class
+                   (find-class class))))
     (find-if (lambda (target-class)
-               (let ((target-class (find-class target-class nil)))
+               (let ((target-class (if (typep target-class 'class)
+                                       target-class
+                                       (find-class target-class nil))))
                  (and target-class
-                      (class-inherit-p target-class class))))
+                      (or (eq target-class class)
+                          (class-inherit-p target-class class)))))
              target-classes)))
 
 
