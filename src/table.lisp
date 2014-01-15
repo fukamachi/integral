@@ -223,9 +223,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
          (mapcar (lambda (column)
                    (destructuring-bind (name &key type not-null primary-key) column
                      (declare (ignore type))
-                     (list :name (intern (string-upcase name) package)
-                           :not-null not-null
-                           :primary-key primary-key)))
+                     (let ((name-string (string-upcase name)))
+                       (list :name (intern name-string package)
+                             :initargs (list (intern name-string :keyword))
+                             :not-null not-null
+                             :primary-key primary-key))))
                  db-columns))
         :test #'eq
         :key #'cadr

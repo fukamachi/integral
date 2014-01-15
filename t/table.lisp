@@ -181,7 +181,8 @@
 (ok (make-instance 'tweet))
 
 (defclass tweet ()
-  ((user :accessor tweet-user))
+  ((user :initarg :user
+         :accessor tweet-user))
   (:metaclass dao-table-class)
   (:table-name "tweets")
   (:generate-slots t))
@@ -200,5 +201,10 @@
       'user)
   (is (c2mop:slot-definition-readers (car slots))
       '(tweet-user)))
+
+(let ((tw (make-instance 'tweet
+                         :status "Is this okay?"
+                         :user "nitro_idiot")))
+  (is (tweet-user tw) "nitro_idiot"))
 
 (finalize)
