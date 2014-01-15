@@ -9,10 +9,10 @@
         :integral
         :cl-test-more)
   (:import-from :integral
-                :insert-sql
-                :update-sql
-                :delete-sql
-                :find-sql)
+                :make-insert-sql
+                :make-update-sql
+                :make-delete-sql
+                :make-find-sql)
   (:import-from :integral-test.init
                 :connect-to-testdb))
 (in-package :integral-test)
@@ -43,19 +43,19 @@
   (let ((tweet (make-instance 'tweet
                               :status "This is the first tweet. Yay."
                               :user "nitro_idiot")))
-    (is (insert-sql tweet)
+    (is (make-insert-sql tweet)
         "INSERT INTO `tweets` (`status`, `user`) VALUES ('This is the first tweet. Yay.', 'nitro_idiot')")
 
     ;; for testing
     (setf (slot-value tweet 'id) 1)
 
-    (is (update-sql tweet)
+    (is (make-update-sql tweet)
         "UPDATE `tweets` SET `id` = 1, `status` = 'This is the first tweet. Yay.', `user` = 'nitro_idiot' WHERE (`id` = 1)")
 
-    (is (delete-sql tweet)
+    (is (make-delete-sql tweet)
         "DELETE FROM `tweets` WHERE (`id` = 1)")
 
-    (is (find-sql (find-class 'tweet) 1)
+    (is (make-find-sql (find-class 'tweet) 1)
         "SELECT * FROM `tweets` WHERE (`id` = 1) LIMIT 1")))
 
 (connect-to-testdb)

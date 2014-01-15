@@ -85,7 +85,7 @@
 
 (cl-syntax:use-syntax :annot)
 
-(defmethod insert-sql ((obj dao-class))
+(defmethod make-insert-sql ((obj dao-class))
   (yield
    (insert-into (intern (table-name obj) :keyword)
                 (apply #'set=
@@ -111,7 +111,7 @@
         (let ((pk-value (get-pk-value)))
           (when (integerp pk-value)
             (setf (slot-value obj serial-key) (1+ pk-value)))))
-      (multiple-value-bind (sql bind) (insert-sql obj)
+      (multiple-value-bind (sql bind) (make-insert-sql obj)
         (apply #'dbi:do-sql
                (get-connection)
                sql bind))
@@ -120,7 +120,7 @@
           (setf (slot-value obj serial-key) pk-value)))
       obj)))
 
-(defmethod update-sql ((obj dao-class))
+(defmethod make-update-sql ((obj dao-class))
   (let ((primary-key (table-primary-key (class-of obj))))
     (unless primary-key
       (error 'unknown-primary-key-error
@@ -143,12 +143,12 @@
 
 @export
 (defmethod update-dao ((obj dao-class))
-  (multiple-value-bind (sql bind) (update-sql obj)
+  (multiple-value-bind (sql bind) (make-update-sql obj)
     (apply #'dbi:do-sql
            (get-connection)
            sql bind)))
 
-(defmethod delete-sql ((obj dao-class))
+(defmethod make-delete-sql ((obj dao-class))
   (let ((primary-key (table-primary-key (class-of obj))))
     (unless primary-key
       (error 'unknown-primary-key-error
@@ -163,7 +163,7 @@
 
 @export
 (defmethod delete-dao ((obj dao-class))
-  (multiple-value-bind (sql bind) (delete-sql obj)
+  (multiple-value-bind (sql bind) (make-delete-sql obj)
     (apply #'dbi:do-sql
            (get-connection)
            sql bind)))
@@ -198,7 +198,7 @@
 (defmethod select-dao ((class symbol) &optional condition)
   (select-dao (find-class class) condition))
 
-(defmethod find-sql ((class dao-table-class) &rest pk-values)
+(defmethod make-find-sql ((class dao-table-class) &rest pk-values)
   (let ((primary-key (table-primary-key class)))
     (unless primary-key
       (error 'unknown-primary-key-error
@@ -218,7 +218,7 @@
 @export
 (defmethod find-dao ((class dao-table-class) &rest pk-values)
   (multiple-value-bind (sql bind)
-      (apply #'find-sql class pk-values)
+      (apply #'make-find-sql class pk-values)
     (let* ((query (dbi:prepare (get-connection) sql))
            (result (apply #'dbi:execute query bind)))
       (plist-to-dao class (dbi:fetch result)))))
