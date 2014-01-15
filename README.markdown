@@ -1,6 +1,6 @@
 # Integral
 
-Integral is a object relational mapper for Common Lisp based on [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
+Integral is an object relational mapper for Common Lisp based on [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
 <span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
 
@@ -56,10 +56,14 @@ Integral is a object relational mapper for Common Lisp based on [CL-DBL](https:/
            :accessor :tweet-user))
   (:metaclass dao-table-class)
   (:keys user))
+
+(table-definition 'tweet)
 ;=> "CREATE TABLE tweet (id INTEGER AUTO_INCREMENT PRIMARY KEY, status TEXT, user VARCHAR(64), KEY (user))"
+
+(execute-sql (table-definition 'tweet))
 ```
 
-## Generates a class definition from DB schema
+## Generating a class definition from DB schema
 
 If you'd like to administrate a database directly by writing raw SQLs, or wanna use Integral for an existing database, you can generate slot definitions from it.
 
