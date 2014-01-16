@@ -66,7 +66,7 @@
 (let ((sxql:*quote-character* #\`)
       (sxql:*use-placeholder* nil))
   (is (table-definition 'tweet)
-      "CREATE TABLE `tweets` (`id` INTEGER AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64))")
+      "CREATE TABLE `tweets` (`id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64))")
 
   (setf (find-class 'tweet) nil)
   (defclass tweet ()
@@ -84,7 +84,7 @@
     (:table-name "tweets"))
 
   (is (table-definition 'tweet)
-      "CREATE TABLE `tweets` (`id` INTEGER AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64))")
+      "CREATE TABLE `tweets` (`id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64))")
 
   (setf (find-class 'tweet) nil)
   (defclass tweet ()
@@ -101,7 +101,7 @@
     (:keys id))
 
   (is (table-definition 'tweet)
-      "CREATE TABLE `tweets` (`id` BIGINT AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64), KEY (`id`))")
+      "CREATE TABLE `tweets` (`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, `status` TEXT, `user` VARCHAR(64), KEY (`id`))")
 
   (setf (find-class 'tweet) nil)
   (defclass tweet ()
@@ -157,7 +157,7 @@
 
 (connect-to-testdb)
 
-(execute-sql "CREATE TABLE tweets (id INTEGER PRIMERY KEY, status TEXT, user VARCHAR(64))")
+(execute-sql "CREATE TABLE tweets (id INTEGER NOT NULL PRIMARY KEY, status TEXT, user VARCHAR(64))")
 
 (ok (make-instance 'tweet))
 

@@ -20,18 +20,18 @@
 (is (cltype-to-dbtype 'enum "one" "two" "three")
     '(:enum "one" "two" "three"))
 
-(is (dbtype-to-cltype "CHAR(32)")
-    '(integral.type:char 32))
-(is (dbtype-to-cltype "CHARACTER(32)")
-    '(integral.type:char 32))
-(is (dbtype-to-cltype "char(32)")
-    '(integral.type:char 32))
+(is (string-to-cltype "CHAR(32)")
+    '(:char 32))
+(is (string-to-cltype "CHARACTER(32)")
+    '(:char 32))
+(is (string-to-cltype "char(32)")
+    '(:char 32))
 
-(is (dbtype-to-cltype "text")
+(is (string-to-cltype "text")
     'integral.type:text)
 
-(is (dbtype-to-cltype "character varying(32)")
-    '(integral.type:varchar 32))
+(is (string-to-cltype "character varying(32)")
+    '(:varchar 32))
 
 (setf (type-alias "MY ORIGINAL TYPE") 'my-original-type)
 
@@ -39,9 +39,9 @@
     'my-original-type
     :test #'eq)
 
-(is (dbtype-to-cltype "MY ORIGINAL TYPE")
+(is (string-to-cltype "MY ORIGINAL TYPE")
     'my-original-type)
-(is (dbtype-to-cltype "MY ORIGINAL TYPE(128)")
-    '(my-original-type 128))
+(is (string-to-cltype "MY ORIGINAL TYPE(128)")
+    '(:my-original-type 128))
 
 (finalize)

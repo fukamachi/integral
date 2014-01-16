@@ -59,36 +59,46 @@
                   :value (lambda (column)
                            (remove-from-plist column key))))
 
-(defun %list-diff (a b &key (test #'string=))
+(defun %list-diff (a b &key (key #'identity) (test #'string=))
   (cond
     ((null a)
      (values nil nil b))
     ((null b)
      (values nil a nil))
-    ((funcall test (car a) (car b))
+    ((funcall test
+              (funcall key (car a))
+              (funcall key (car b)))
      (multiple-value-bind (intersection sub-a sub-b)
-         (%list-diff (cdr a) (cdr b) :test test)
+         (%list-diff (cdr a) (cdr b)
+                     :key key
+                     :test test)
        (values (cons (car a) intersection)
                sub-a
                sub-b)))
-    (T (let ((pos (position (car a) (cdr b) :test test)))
+    (T (let ((pos (position (funcall key (car a)) (cdr b)
+                            :key key
+                            :test test)))
          (if pos
              (multiple-value-bind (intersection sub-a sub-b)
                  (%list-diff (cdr a) (nthcdr (+ 2 pos) b)
+                             :key key
                              :test test)
                (values (cons (car a) intersection)
                        sub-a
                        (append (subseq b 0 (1+ pos)) sub-b)))
              (multiple-value-bind (intersection sub-a sub-b)
-                 (%list-diff (cdr a) b :test test)
+                 (%list-diff (cdr a) b
+                             :key key
+                             :test test)
                  (values intersection
                          (cons (car a) sub-a)
                          sub-b)))))))
 
 @export
-(defun list-diff (a b &key (test #'string=))
+(defun list-diff (a b &key sort-key (sort-fn #'string<) (key #'identity) (test #'string=))
   "Compute differences two lists.
-Note this can be applied for a list of strings."
-  (%list-diff (sort (copy-list a) #'string= )
-              (sort (copy-list b) #'string=)
+Note this can be applied for a list of string-designators."
+  (%list-diff (sort (copy-list a) sort-fn :key (or sort-key #'identity))
+              (sort (copy-list b) sort-fn :key (or sort-key #'identity))
+              :key key
               :test test))

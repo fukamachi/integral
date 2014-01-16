@@ -53,7 +53,9 @@
 
 (defmethod initialize-instance :after ((column table-column-definition) &key)
   (when (eq (table-column-type column) 'serial)
-    (setf (auto-increment-p column) t)))
+    (setf (auto-increment-p column) t))
+  (when (primary-key-p column)
+    (setf (slot-value column 'not-null) t)))
 
 (defgeneric table-column-name (column)
   (:method ((column table-column-definition))

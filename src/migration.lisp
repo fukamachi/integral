@@ -16,6 +16,10 @@
   (:import-from :integral.column
                 :table-column-name
                 :column-info-for-create-table)
+  (:import-from :integral.type
+                :is-type-equal)
+  (:import-from :integral.error
+                :migration-error)
   (:import-from :integral.util
                 :list-diff
                 :symbol-name-literally)
@@ -26,6 +30,7 @@
                 :make-statement
                 :yield
                 :add-column
+                :modify-column
                 :drop-column))
 (in-package :integral.migration)
 
@@ -37,35 +42,58 @@
                              (table-name class)))
         (slots (database-column-slots class)))
     (multiple-value-bind (same new old)
-        (list-diff (mapcar (lambda (slot)
-                             (symbol-name-literally (table-column-name slot)))
-                           slots)
-                   (mapcar #'car column-definitions))
+        (list-diff (mapcar
+                    (lambda (slot)
+                      (let ((info (column-info-for-create-table slot)))
+                        (rplaca info (symbol-name-literally (car info)))
+                        info))
+                    slots)
+                   column-definitions
+                   :sort-key #'car
+                   :test (lambda (a b)
+                           (and (string= (car a) (car b))
+                                (is-type-equal (third a) (third b))
+                                (equal (cdddr a) (cdddr b)))))
       (declare (ignore same))
-      (values new old))))
+      (multiple-value-bind (modify add drop)
+          (list-diff new old :sort-key #'car :key #'car :test #'string=)
+        (values add modify drop)))))
 
 (defun generate-migration-sql (class)
-  (let ((slots (database-column-slots class)))
-    (multiple-value-bind (new-columns old-columns)
-        (compute-migrate-table-columns class)
-      (cons
-       (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-              (mapcar (lambda (column)
-                        (apply #'add-column
-                               (column-info-for-create-table
-                                (find-if
-                                 (lambda (slot)
-                                   (string= (symbol-name-literally (table-column-name slot))
-                                            column))
-                                 slots))))
-                      new-columns))
-       ;; SQLite3 doesn't support DROP COLUMN
-       (if (eq (database-type) :sqlite3)
-           nil
-           (list
-            (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                   (mapcar (lambda (column)
-                             (drop-column (intern column :keyword))) old-columns))))))))
+  (multiple-value-bind (new-columns modify-columns old-columns)
+      (compute-migrate-table-columns class)
+    (remove
+     nil
+     (list
+      (if new-columns
+          (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                 (mapcar (lambda (column)
+                           (rplaca column (intern (car column) :keyword))
+                           (apply #'add-column column))
+                         new-columns))
+          nil)
+      (if modify-columns
+          (if (eq (database-type) :sqlite3)
+              (cerror "Ignore the column modification."
+                      'migration-error
+                      :format-control "Column modification wasdetected, but SQLite3 doesn't support MODIFY COLUMN.")
+              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                     (mapcan (lambda (column)
+                               (rplaca column (intern (car column) :keyword))
+                               (if (getf (cdr column) :primary-key)
+                                   (cerror "Ignore the column modification."
+                                           'migration-error
+                                           :format-control "Modification of a primary key doesn't supported yet.")
+                                   (list (apply #'modify-column column))))
+                             modify-columns)))
+          nil)
+      (if (eq (database-type) :sqlite3)
+          (cerror "Ignore the column modification."
+                  'migration-error
+                  :format-control "Column modification wasdetected, but SQLite3 doesn't support DROP COLUMN.")
+          (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                 (mapcar (lambda (column)
+                           (drop-column (intern (car column) :keyword))) old-columns)))))))
 
 @export
 (defun migrate-table-using-class (class)

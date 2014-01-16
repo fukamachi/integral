@@ -12,17 +12,15 @@
   (:import-from :integral.migration
                 :compute-migrate-table-columns
                 :generate-migration-sql)
-  (:import-from :integral-test.init
-                :connect-to-testdb)
   (:import-from :integral.table
                 :table-definition))
 (in-package :integral-test.migration)
 
-(plan 5)
+(plan 9)
 
 (disconnect-toplevel)
 
-(connect-to-testdb)
+(connect-toplevel :mysql :database-name "integral_test" :username "root")
 
 (when (find-class 'tweet nil)
   (setf (find-class 'tweet) nil))
@@ -38,10 +36,11 @@
   (:metaclass dao-table-class)
   (:table-name "tweets"))
 
+(execute-sql "DROP TABLE IF EXISTS tweets")
 (execute-sql (table-definition 'tweet))
 
 (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil))
+    '(nil nil nil))
 
 (defclass tweet ()
   ((id :type serial
@@ -53,13 +52,35 @@
   (:metaclass dao-table-class)
   (:table-name "tweets"))
 
-(multiple-value-bind (new old)
+(multiple-value-bind (new modify old)
     (compute-migrate-table-columns (find-class 'tweet))
-  (is new '("created_at"))
-  (is old '("status")))
+  (is (mapcar #'car new) '("created_at"))
+  (is modify nil)
+  (is (mapcar #'car old) '("status")))
 
 (is (sxql:yield (car (generate-migration-sql (find-class 'tweet))))
     "ALTER TABLE tweets ADD COLUMN created_at CHAR(8)")
+
+(migrate-table-using-class (find-class 'tweet))
+
+(is (compute-migrate-table-columns (find-class 'tweet))
+    NIL)
+
+(defclass tweet ()
+  ((id :type serial
+       :primary-key t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (created_at :type (char 8)))
+  (:metaclass dao-table-class)
+  (:table-name "tweets"))
+
+(multiple-value-bind (new modify old)
+    (compute-migrate-table-columns (find-class 'tweet))
+  (declare (ignore old))
+  (is new nil)
+  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL))))
 
 (migrate-table-using-class (find-class 'tweet))
 

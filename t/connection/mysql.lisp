@@ -18,12 +18,12 @@
                        :database-name "integral_test"
                        :username "root")))
   (dbi:do-sql db "DROP TABLE IF EXISTS tweets")
-  (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO_INCREMENT PRIMARY KEY, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
+  (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO_INCREMENT PRIMARY KEY NOT NULL, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
 
   (is (column-definitions db "tweets")
-      '(("id" :type (integral.type:int 11) :auto-increment t :primary-key t :not-null t)
+      '(("id" :type (:integer 11) :auto-increment t :primary-key t :not-null t)
         ("status" :type integral.type:text :auto-increment nil :primary-key nil  :not-null t)
-        ("user" :type (integral.type:varchar 64) :auto-increment nil :primary-key nil :not-null t)))
+        ("user" :type (:varchar 64) :auto-increment nil :primary-key nil :not-null t)))
 
   (ok (every
        #'equal
@@ -32,7 +32,7 @@
          (:unique-key t :primary-key t :columns ("id")))))
 
   (dbi:do-sql db "DROP TABLE IF EXISTS users")
-  (dbi:do-sql db "CREATE TABLE users (id INTEGER AUTO_INCREMENT PRIMARY KEY, first_name VARCHAR(64) NOT NULL, family_name VARCHAR(64) NOT NULL, UNIQUE(first_name, family_name))")
+  (dbi:do-sql db "CREATE TABLE users (id INTEGER AUTO_INCREMENT PRIMARY KEY NOT NULL, first_name VARCHAR(64) NOT NULL, family_name VARCHAR(64) NOT NULL, UNIQUE(first_name, family_name))")
 
   (ok (every
        #'equal

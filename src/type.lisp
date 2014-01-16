@@ -7,7 +7,9 @@
 (defpackage integral.type
   (:use :cl)
   (:import-from :integral.util
-                :symbol-name-literally))
+                :symbol-name-literally)
+  (:import-from :alexandria
+                :ensure-list))
 (in-package :integral.type)
 
 (cl-syntax:use-syntax :annot)
@@ -72,6 +74,7 @@
 
 (setf (type-alias "CHARACTER") 'char)
 (setf (type-alias "CHARACTER VARYING") 'varchar)
+(setf (type-alias "INT") 'integer)
 
 ;;
 ;; Conversion between CL data types and DB's.
@@ -87,7 +90,7 @@
     (apply #'cltype-to-dbtype type)))
 
 @export
-(defun dbtype-to-cltype (type &optional (package :integral.type))
+(defun string-to-cltype (type &optional (package :integral.type))
   (declare (type string type))
   (let* ((open-paren-pos (position #\( type))
          (close-paren-pos (and open-paren-pos
@@ -98,11 +101,25 @@
              (string-upcase (subseq type 0 open-paren-pos))
              (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos)))
             (string-upcase type))
-      (let ((cltype (or (gethash cltype *type-alias-map*)
+      (let ((cltype (or (type-alias cltype)
                         (intern cltype package))))
-        (if arg
-            (list cltype arg)
-            cltype)))))
+        (apply #'cltype-to-dbtype
+               (if arg
+                   (list cltype arg)
+                   (list cltype)))))))
+
+@export
+(defun is-type-equal (a b)
+  (cond
+    ((and (listp a) (listp b))
+     (and (is-type-equal (car a) (car b))
+          (equal (cdr a) (cdr b))))
+    ;; Check only its type. 'length' is ignored.
+    ((or (listp a) (listp b))
+     (is-type-equal (car (ensure-list a))
+                    (car (ensure-list b))))
+    (T (string= (cltype-to-dbtype (or (type-alias a) a))
+                (cltype-to-dbtype (or (type-alias b) b))))))
 
 @export
 (defmacro define-column-type (type-symbol lambda-list &body body)

@@ -39,3 +39,6 @@
      (format stream
              "`:type' or `:col-type' is required for a slot ~A."
              (slot-value condition 'slot-name)))))
+
+@export
+(define-condition migration-error (integral-error) ())

@@ -7,7 +7,7 @@
 (defpackage integral.connection.sqlite3
   (:use :cl)
   (:import-from :integral.type
-                :dbtype-to-cltype)
+                :string-to-cltype)
   (:import-from :dbi
                 :prepare
                 :execute
@@ -31,15 +31,16 @@
     (or (loop for column = (dbi:fetch query)
               while column
               collect (let* ((type (getf column :|type|))
-                             (pos (search "AUTO INCREMENT" type :test #'string-equal)))
+                             (pos (search "AUTO_INCREMENT" type :test #'string-equal)))
                         (list (getf column :|name|)
-                              :type (dbtype-to-cltype
+                              :type (string-to-cltype
                                      (if pos
                                          (subseq type 0 (1- pos))
                                          type))
                               :auto-increment (not (null pos))
                               :primary-key (= (getf column :|pk|) 1)
-                              :not-null (not (= (getf column :|notnull|) 0)))))
+                              :not-null (or (= (getf column :|pk|) 1)
+                                            (not (= (getf column :|notnull|) 0))))))
         (error "Table \"~A\" doesn't exist." table-name))))
 
 (defun table-primary-keys (conn table-name)
