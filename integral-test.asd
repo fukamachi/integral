@@ -16,13 +16,18 @@
                :uiop)
   :components ((:module "t"
                 :components
-                ((:test-file "init")
+                ((:test-file "init/sqlite3")
+                 (:test-file "init/mysql")
+                 (:test-file "init/postgres")
+                 (:test-file "init")
                  (:test-file "connection/sqlite3")
                  (:test-file "connection/mysql")
                  (:test-file "connection/postgres")
                  (:test-file "type")
                  (:test-file "table")
-                 (:test-file "migration")
+                 (:test-file "migration/sqlite3")
+                 (:test-file "migration/mysql")
+                 (:test-file "migration/postgres")
                  (:test-file "integral"))))
 
   :defsystem-depends-on (:cl-test-more)

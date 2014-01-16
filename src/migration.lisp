@@ -81,7 +81,7 @@
           (if (eq (database-type) :sqlite3)
               (cerror "Ignore the column modification."
                       'migration-error
-                      :format-control "Column modification wasdetected, but SQLite3 doesn't support MODIFY COLUMN.")
+                      :format-control "Column modification was detected, but SQLite3 doesn't support MODIFY COLUMN.")
               (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                      (mapcan (lambda (column)
                                (rplaca column (intern (car column) :keyword))
@@ -95,7 +95,7 @@
       (if (eq (database-type) :sqlite3)
           (cerror "Ignore the column modification."
                   'migration-error
-                  :format-control "Column modification wasdetected, but SQLite3 doesn't support DROP COLUMN.")
+                  :format-control "Column modification was detected, but SQLite3 doesn't support DROP COLUMN.")
           (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                  (mapcar (lambda (column)
                            (drop-column (intern (car column) :keyword))) old-columns)))))))

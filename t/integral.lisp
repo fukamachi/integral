@@ -7,14 +7,13 @@
 (defpackage integral-test
   (:use :cl
         :integral
+        :integral-test.init
         :cl-test-more)
   (:import-from :integral
                 :make-insert-sql
                 :make-update-sql
                 :make-delete-sql
-                :make-find-sql)
-  (:import-from :integral-test.init
-                :connect-to-testdb))
+                :make-find-sql))
 (in-package :integral-test)
 
 (plan nil)

@@ -7,6 +7,7 @@
 (defpackage integral-test.connection.postgres
   (:use :cl
         :cl-test-more
+        :integral-test.init
         :dbi
         :integral
         :integral.connection.postgres))
@@ -14,9 +15,7 @@
 
 (plan 3)
 
-(let ((db (dbi:connect :postgres
-                       :database-name "integral_test"
-                       :username "nitro_idiot")))
+(let ((db (connect-to-testdb :postgres)))
   (dbi:do-sql db "DROP TABLE IF EXISTS tweets")
   (dbi:do-sql db "CREATE TABLE tweets (id SERIAL PRIMARY KEY, status TEXT NOT NULL, \"user\" VARCHAR(64) NOT NULL, UNIQUE (id, \"user\"))")
 
@@ -38,8 +37,6 @@
        #'equal
        (table-indices db "users")
        '((:unique-key t :primary-key nil :columns ("family_name" "first_name"))
-         (:unique-key t :primary-key t :columns ("id")))))
-
-  (dbi:disconnect db))
+         (:unique-key t :primary-key t :columns ("id"))))))
 
 (finalize)

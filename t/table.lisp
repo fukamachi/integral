@@ -8,9 +8,8 @@
   (:use :cl
         :integral
         :integral.table
+        :integral-test.init
         :cl-test-more)
-  (:import-from :integral-test.init
-                :connect-to-testdb)
   (:import-from :integral.column
                 :table-column-definition)
   (:import-from :integral.table

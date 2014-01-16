@@ -7,6 +7,7 @@
 (defpackage integral-test.connection.mysql
   (:use :cl
         :cl-test-more
+        :integral-test.init
         :dbi
         :integral
         :integral.connection.mysql))
@@ -14,9 +15,7 @@
 
 (plan 3)
 
-(let ((db (dbi:connect :mysql
-                       :database-name "integral_test"
-                       :username "root")))
+(let ((db (connect-to-testdb :mysql)))
   (dbi:do-sql db "DROP TABLE IF EXISTS tweets")
   (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO_INCREMENT PRIMARY KEY NOT NULL, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
 
@@ -38,8 +37,6 @@
        #'equal
        (table-indices db "users")
        '((:unique-key t :primary-key nil :columns ("first_name" "family_name"))
-         (:unique-key t :primary-key t :columns ("id")))))
-
-  (dbi:disconnect db))
+         (:unique-key t :primary-key t :columns ("id"))))))
 
 (finalize)

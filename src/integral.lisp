@@ -19,7 +19,8 @@
                 :integral-error
                 :connection-not-established-error
                 :unknown-primary-key-error
-                :type-missing-error)
+                :type-missing-error
+                :migration-error)
   (:import-from :integral.type
                 :serial
                 :tinyint
@@ -74,6 +75,7 @@
            :connection-not-established-error
            :unknown-primary-key-error
            :type-missing-error
+           :migration-error
 
            ;; from SxQL
            :where

@@ -4,23 +4,24 @@
 |#
 
 (in-package :cl-user)
-(defpackage integral-test.migration
+(defpackage integral-test.migration.sqlite3
   (:use :cl
         :integral
         :integral.migration
+        :integral-test.init
         :cl-test-more)
   (:import-from :integral.migration
                 :compute-migrate-table-columns
                 :generate-migration-sql)
   (:import-from :integral.table
                 :table-definition))
-(in-package :integral-test.migration)
+(in-package :integral-test.migration.sqlite3)
 
-(plan 9)
+(plan 8)
 
 (disconnect-toplevel)
 
-(connect-toplevel :mysql :database-name "integral_test" :username "root")
+(connect-to-testdb :sqlite3)
 
 (when (find-class 'tweet nil)
   (setf (find-class 'tweet) nil))
@@ -58,10 +59,11 @@
   (is modify nil)
   (is (mapcar #'car old) '("status")))
 
-(is (sxql:yield (car (generate-migration-sql (find-class 'tweet))))
-    "ALTER TABLE tweets ADD COLUMN created_at CHAR(8)")
-
-(migrate-table-using-class (find-class 'tweet))
+(handler-bind ((migration-error #'(lambda (e)
+                                    (let ((r (find-restart 'continue e)))
+                                      (when r
+                                        (invoke-restart r))))))
+  (migrate-table-using-class (find-class 'tweet)))
 
 (is (compute-migrate-table-columns (find-class 'tweet))
     NIL)
@@ -82,7 +84,11 @@
   (is new nil)
   (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL))))
 
-(migrate-table-using-class (find-class 'tweet))
+(handler-bind ((migration-error #'(lambda (e)
+                                    (let ((r (find-restart 'continue e)))
+                                      (when r
+                                        (invoke-restart r))))))
+  (migrate-table-using-class (find-class 'tweet)))
 
 (is (compute-migrate-table-columns (find-class 'tweet))
     NIL)

@@ -7,18 +7,17 @@
 (defpackage integral-test.connection.sqlite3
   (:use :cl
         :cl-test-more
+        :integral-test.init
         :dbi
         :integral
         :integral.connection.sqlite3)
   (:import-from :integral.connection.sqlite3
-                :table-primary-keys)
-  (:import-from :integral-test.init
-                :connect-to-testdb))
+                :table-primary-keys))
 (in-package :integral-test.connection.sqlite3)
 
 (plan 5)
 
-(let ((db (connect-to-testdb)))
+(let ((db (connect-to-testdb :sqlite3)))
   (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO_INCREMENT PRIMARY KEY NOT NULL, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
 
   (is (table-primary-keys db "tweets") '("id"))
