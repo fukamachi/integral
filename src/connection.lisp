@@ -14,7 +14,9 @@
                 :disconnect
                 :ping)
   (:import-from :dbi.driver
-                :<dbi-connection>))
+                :<dbi-connection>)
+  (:import-from :sxql
+                :*quote-character*))
 (in-package :integral.connection)
 
 (cl-syntax:use-syntax :annot)
@@ -80,6 +82,22 @@ If no connections are established, NIL will be returned."
 
   (when (connected-p)
     (connection-driver-type (get-connection))))
+
+@export
+(defun connection-quote-character (&optional conn)
+  (if (and (not conn)
+           (not (connected-p)))
+      nil
+      (ecase (connection-driver-type (or conn (get-connection)))
+        (:mysql #\`)
+        (:postgres #\")
+        (:sqlite3 #\"))))
+
+@export
+(defmacro with-quote-char (&body body)
+  `(let ((sxql:*quote-character* (or sxql:*quote-character*
+                                     (connection-quote-character))))
+     ,@body))
 
 @export
 (defun retrieve-table-column-definitions-by-name (conn table-name)

@@ -9,7 +9,8 @@
   (:import-from :integral.connection
                 :get-connection
                 :database-type
-                :retrieve-table-column-definitions-by-name)
+                :retrieve-table-column-definitions-by-name
+                :with-quote-char)
   (:import-from :integral.table
                 :table-name
                 :database-column-slots
@@ -105,7 +106,8 @@
   (let ((sql-list (generate-migration-sql class)))
     (dbi:with-transaction (get-connection)
       (dolist (sql sql-list)
-        (multiple-value-bind (sql bind) (yield sql)
+        (multiple-value-bind (sql bind)
+            (with-quote-char (yield sql))
           (apply #'dbi:do-sql (get-connection) sql bind))))))
 
 (defmethod initialize-instance :after ((class dao-table-class) &key)

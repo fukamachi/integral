@@ -37,7 +37,8 @@
                 :connect-toplevel
                 :disconnect-toplevel
                 :last-insert-id
-                :database-type)
+                :database-type
+                :with-quote-char)
   (:import-from :integral.util
                 :symbol-name-literally)
   (:import-from :dbi
@@ -88,16 +89,17 @@
 (cl-syntax:use-syntax :annot)
 
 (defmethod make-insert-sql ((obj dao-class))
-  (yield
-   (insert-into (intern (table-name obj) :keyword)
-                (apply #'set=
-                       (mapcan
-                        #'(lambda (slot-name)
-                            (if (slot-boundp obj slot-name)
-                                (list (intern (symbol-name slot-name) :keyword)
-                                      (slot-value obj slot-name))
-                                nil))
-                        (database-column-slot-names (class-of obj)))))))
+  (with-quote-char
+    (yield
+     (insert-into (intern (table-name obj) :keyword)
+       (apply #'set=
+              (mapcan
+               #'(lambda (slot-name)
+                   (if (slot-boundp obj slot-name)
+                       (list (intern (symbol-name slot-name) :keyword)
+                             (slot-value obj slot-name))
+                       nil))
+               (database-column-slot-names (class-of obj))))))))
 
 @export
 (defmethod insert-dao ((obj dao-class))
@@ -128,20 +130,21 @@
       (error 'unknown-primary-key-error
              :table-name (table-name obj)))
 
-    (yield (update (intern (table-name obj) :keyword)
-             (apply #'set=
-                    (mapcan
-                     #'(lambda (slot-name)
-                         (if (slot-boundp obj slot-name)
-                             (list (intern (symbol-name slot-name) :keyword)
-                                   (slot-value obj slot-name))
-                             nil))
-                     (database-column-slot-names (class-of obj))))
-             (where (if (cdr primary-key)
-                        `(:and ,@(mapcar #'(lambda (key)
-                                             `(:= ,key ,(slot-value obj key)))
-                                         primary-key))
-                        `(:= ,(car primary-key) ,(slot-value obj (car primary-key)))))))))
+    (with-quote-char
+      (yield (update (intern (table-name obj) :keyword)
+               (apply #'set=
+                      (mapcan
+                       #'(lambda (slot-name)
+                           (if (slot-boundp obj slot-name)
+                               (list (intern (symbol-name slot-name) :keyword)
+                                     (slot-value obj slot-name))
+                               nil))
+                       (database-column-slot-names (class-of obj))))
+               (where (if (cdr primary-key)
+                          `(:and ,@(mapcar #'(lambda (key)
+                                               `(:= ,key ,(slot-value obj key)))
+                                           primary-key))
+                          `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))))
 
 @export
 (defmethod update-dao ((obj dao-class))
@@ -156,12 +159,13 @@
       (error 'unknown-primary-key-error
              :table-name (table-name obj)))
 
-    (yield (delete-from (intern (table-name obj) :keyword)
-             (where (if (cdr primary-key)
-                        `(:and ,@(mapcar #'(lambda (key)
-                                             `(:= ,key ,(slot-value obj key)))
-                                         primary-key))
-                        `(:= ,(car primary-key) ,(slot-value obj (car primary-key)))))))))
+    (with-quote-char
+      (yield (delete-from (intern (table-name obj) :keyword)
+               (where (if (cdr primary-key)
+                          `(:and ,@(mapcar #'(lambda (key)
+                                               `(:= ,key ,(slot-value obj key)))
+                                           primary-key))
+                          `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))))
 
 @export
 (defmethod delete-dao ((obj dao-class))
@@ -188,7 +192,8 @@
     (when condition
       (add-child select-sql condition))
 
-    (multiple-value-bind (sql bind) (yield select-sql)
+    (multiple-value-bind (sql bind)
+        (with-quote-char (yield select-sql))
 
       (let* ((query (dbi:prepare (get-connection) sql))
              (result (apply #'dbi:execute query bind)))
@@ -206,16 +211,17 @@
       (error 'unknown-primary-key-error
              :table-name (table-name class)))
 
-    (yield
-     (select :*
-       (from (intern (table-name class) :keyword))
-       (where (if (cdr primary-key)
-                  `(:and ,@(mapcar #'(lambda (key val)
-                                       `(:= ,key ,val))
-                                   primary-key
-                                   pk-values))
-                  `(:= ,(car primary-key) ,(car pk-values))))
-       (limit 1)))))
+    (with-quote-char
+      (yield
+       (select :*
+         (from (intern (table-name class) :keyword))
+         (where (if (cdr primary-key)
+                    `(:and ,@(mapcar #'(lambda (key val)
+                                         `(:= ,key ,val))
+                                     primary-key
+                                     pk-values))
+                    `(:= ,(car primary-key) ,(car pk-values))))
+         (limit 1))))))
 
 @export
 (defmethod find-dao ((class dao-table-class) &rest pk-values)

@@ -9,6 +9,7 @@
   (:import-from :integral.connection
                 :get-connection
                 :database-type
+                :with-quote-char
                 :retrieve-table-column-definitions-by-name)
   (:import-from :integral.column
                 :table-column-definition
@@ -149,26 +150,27 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:method ((class symbol))
     (table-definition (find-class class)))
   (:method ((class dao-table-class))
-    (let ((sqlite3-p (eq :sqlite3 (database-type))))
-      (yield
-       (apply #'sxql:make-statement
-              :create-table
-              (intern (table-name class) :keyword)
-              (mapcar
-               #'column-info-for-create-table
-               (database-column-slots class))
-              (append
-               (if (slot-boundp class 'primary-key)
-                   (list (apply #'sxql:primary-key
-                                (slot-value class 'primary-key)))
-                   nil)
-               (if (slot-boundp class 'unique-keys)
-                   (mapcar #'sxql:unique-key (slot-value class 'unique-keys))
-                   nil)
-               (if (and (slot-boundp class 'keys)
-                        (not sqlite3-p)) ;; ignoring :keys when using SQLite3
-                   (mapcar #'sxql:index-key (slot-value class 'keys))
-                   nil)))))))
+    (with-quote-char
+      (let ((sqlite3-p (eq :sqlite3 (database-type))))
+        (yield
+         (apply #'sxql:make-statement
+                :create-table
+                (intern (table-name class) :keyword)
+                (mapcar
+                 #'column-info-for-create-table
+                 (database-column-slots class))
+                (append
+                 (if (slot-boundp class 'primary-key)
+                     (list (apply #'sxql:primary-key
+                                  (slot-value class 'primary-key)))
+                     nil)
+                 (if (slot-boundp class 'unique-keys)
+                     (mapcar #'sxql:unique-key (slot-value class 'unique-keys))
+                     nil)
+                 (if (and (slot-boundp class 'keys)
+                          (not sqlite3-p)) ;; ignoring :keys when using SQLite3
+                     (mapcar #'sxql:index-key (slot-value class 'keys))
+                     nil))))))))
 
 @export
 (defgeneric database-column-slots (class)
