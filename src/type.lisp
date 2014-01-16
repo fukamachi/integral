@@ -51,28 +51,66 @@
   'string)
 
 @export
+(deftype char (length)
+  (declare (ignore length))
+  'string)
+
+@export
 (deftype enum (&rest candidates)
   (declare (ignore candidates))
   'string)
 
+(defvar *type-alias-map* (make-hash-table :test 'equal))
+
+@export
+(defun type-alias (type)
+  (nth-value 0
+             (gethash (string-upcase type) *type-alias-map*)))
+
+@export
+(defun (setf type-alias) (alias type)
+  (setf (gethash (string-upcase type) *type-alias-map*)
+        alias))
+
+(setf (type-alias "CHARACTER") 'char)
+(setf (type-alias "CHARACTER VARYING") 'varchar)
 
 ;;
-;; Conversion from CL data types to DB's.
+;; Conversion between CL data types and DB's.
 
-(defgeneric column-type (type &rest args)
+@export
+(defgeneric cltype-to-dbtype (type &rest args)
   (:method ((type t) &rest args)
     (if args
         `(,(intern (string type) :keyword) ,@args)
         type))
   (:method ((type list) &rest args)
     (declare (ignore args))
-    (apply #'column-type type)))
+    (apply #'cltype-to-dbtype type)))
+
+@export
+(defun dbtype-to-cltype (type &optional (package :integral.type))
+  (declare (type string type))
+  (let* ((open-paren-pos (position #\( type))
+         (close-paren-pos (and open-paren-pos
+                               (position #\) type :start (1+ open-paren-pos)))))
+    (multiple-value-bind (cltype arg)
+        (if open-paren-pos
+            (values
+             (string-upcase (subseq type 0 open-paren-pos))
+             (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos)))
+            (string-upcase type))
+      (let ((cltype (or (gethash cltype *type-alias-map*)
+                        (intern cltype package))))
+        (if arg
+            (list cltype arg)
+            cltype)))))
 
 @export
 (defmacro define-column-type (type-symbol lambda-list &body body)
   (let ((type (gensym "TYPE"))
         (args (gensym "ARGS")))
-    `(defmethod column-type ((,type (eql ',type-symbol)) &rest ,args)
+    `(defmethod cltype-to-dbtype ((,type (eql ',type-symbol)) &rest ,args)
        (declare (ignore ,type))
        (destructuring-bind ,lambda-list ,args
          ,@body))))

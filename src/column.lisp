@@ -10,7 +10,7 @@
   (:import-from :integral.connection
                 :database-type)
   (:import-from :integral.type
-                :column-type
+                :cltype-to-dbtype
                 :serial)
   (:import-from :integral.error
                 :type-missing-error)
@@ -80,7 +80,7 @@
                  :slot-name (c2mop:slot-definition-name column)))
 
         `(,(table-column-name column)
-          :type ,(column-type col-type)
+          :type ,(cltype-to-dbtype col-type)
           :primary-key ,primary-key
           :auto-increment ,(if (eq (database-type) :postgres)
                                nil

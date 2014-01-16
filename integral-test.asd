@@ -20,6 +20,7 @@
                  (:file "connection/sqlite3")
                  (:file "connection/mysql")
                  (:file "connection/postgres")
+                 (:file "type")
                  (:file "table")
                  (:file "integral"))))
 
