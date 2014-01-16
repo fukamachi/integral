@@ -79,10 +79,11 @@
 
         `(,(table-column-name column)
           :type ,(cltype-to-dbtype col-type)
-          :auto-increment ,(if (eq (database-type) :postgres)
-                               nil
-                               (or (eq col-type 'serial)
-                                   auto-increment))
+          :auto-increment ,(case (database-type)
+                             (:postgres nil)
+                             (:sqlite3 nil)
+                             (:mysql (or (eq col-type 'serial)
+                                         auto-increment)))
           :primary-key ,primary-key
           :not-null ,not-null)))))
 
