@@ -34,6 +34,43 @@
                               :type (if pos
                                         (subseq type 0 (1- pos))
                                         type)
+                              :auto-increment (not (null pos))
                               :not-null (not (= (getf column :|notnull|) 0))
                               :primary-key (= (getf column :|pk|) 0))))
         (error "Table \"~A\" doesn't exist." table-name))))
+
+(defun table-primary-keys (conn table-name)
+  (mapcar #'(lambda (column) (getf column :|name|))
+          (remove-if-not (lambda (column)
+                           (= (getf column :|pk|) 1))
+                         (dbi:fetch-all
+                          (dbi:execute
+                           (dbi:prepare conn (format nil "PRAGMA table_info(~A)" table-name)))))))
+
+@export
+(defun table-indices (conn table-name)
+  (let ((primary-keys (table-primary-keys conn table-name))
+        (query (dbi:execute
+                (dbi:prepare conn (format nil "PRAGMA index_list(~A)" table-name)))))
+    (append
+     (if primary-keys
+         (list (list :unique-key t :primary-key t :columns primary-keys))
+         nil)
+     (loop for index = (dbi:fetch query)
+           while index
+           collect
+           (let* ((columns (mapcar
+                            (lambda (info) (getf info :|name|))
+                            (dbi:fetch-all
+                             (dbi:execute (dbi:prepare conn (format nil "PRAGMA index_info('~A')"
+                                                                    (getf index :|name|)))))))
+                  (unique-key (= (getf index :|unique|) 1))
+                  (primary-key (and unique-key
+                                    primary-keys
+                                    (equal columns primary-keys))))
+             (when primary-key
+               (setf primary-keys nil))
+             (list
+              :unique-key unique-key
+              :primary-key primary-key
+              :columns columns))))))

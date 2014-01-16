@@ -11,7 +11,11 @@
                 :finalize-inheritance
                 :slot-definition-name
                 :class-direct-slots
-                :class-direct-superclasses))
+                :class-direct-superclasses)
+  (:import-from :group-by
+                :group-by)
+  (:import-from :alexandria
+                :remove-from-plist))
 (in-package :integral.util)
 
 (cl-syntax:use-syntax :annot)
@@ -46,3 +50,11 @@
         (member parent
                 (c2mop:class-direct-superclasses target)
                 :test #'eq))))
+
+@export
+(defun group-by-plist-key (plist &key key (test #'eq))
+  (group-by plist :key (lambda (column)
+                         (getf column key))
+                  :test test
+                  :value (lambda (column)
+                           (remove-from-plist column key))))

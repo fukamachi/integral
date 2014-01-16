@@ -17,6 +17,9 @@
   :components ((:module "t"
                 :components
                 ((:file "init")
+                 (:file "connection/sqlite3")
+                 (:file "connection/mysql")
+                 (:file "connection/postgres")
                  (:file "table")
                  (:file "integral"))))
 

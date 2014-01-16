@@ -6,10 +6,13 @@
 (in-package :cl-user)
 (defpackage integral.connection.mysql
   (:use :cl)
+  (:import-from :integral.util
+                :group-by-plist-key)
   (:import-from :dbi
                 :prepare
                 :execute
-                :fetch))
+                :fetch
+                :connection-database-name))
 (in-package :integral.connection.mysql)
 
 (cl-syntax:use-syntax :annot)
@@ -31,4 +34,28 @@
           collect (list (getf column :|Field|)
                         :type (getf column :|Type|)
                         :not-null (string= (getf column :|Null|) "NO")
-                        :primary-key (string= (getf column :|Key|) "PRI")))))
+                        :primary-key (string= (getf column :|Key|) "PRI")
+                        :auto-increment (string= (getf column :|Extra|) "auto_increment")))))
+
+@export
+(defun table-indices (conn table-name)
+  (let ((query
+          (dbi:prepare conn
+                       (format nil "SELECT index_name, column_name, non_unique
+                                 FROM information_schema.statistics
+                                 WHERE table_schema = '~A'
+                                   AND table_name = '~A'
+                                 ORDER BY index_name, seq_in_index"
+                               (connection-database-name conn)
+                               table-name))))
+    (mapcar #'(lambda (plist)
+                (destructuring-bind (index-name &rest column-list) plist
+                  (list :unique-key (= (getf (first column-list) :|non_unique|) 0)
+                        :primary-key (string= index-name "PRIMARY")
+                        :columns (mapcar #'(lambda (column)
+                                             (getf column :|column_name|))
+                                         column-list))))
+            (group-by-plist-key
+             (dbi:fetch-all (dbi:execute query))
+             :key :|index_name|
+             :test #'string=))))

@@ -20,6 +20,8 @@
                :sxql
                :dbi
                :closer-mop
+               :split-sequence
+               :group-by
                :alexandria)
   :components ((:module "src"
                 :components
@@ -29,6 +31,7 @@
                  (:file "connection" :depends-on ("connection-drivers" "error"))
                  (:module "connection-drivers"
                   :pathname "connection"
+                  :depends-on ("util")
                   :components
                   ((:file "mysql")
                    (:file "postgres")

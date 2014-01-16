@@ -221,12 +221,13 @@ If you want to use another class, specify it as a superclass in the usual way.")
         (append
          (mapcar #'slot-definition-to-plist (c2mop:class-direct-slots class))
          (mapcar (lambda (column)
-                   (destructuring-bind (name &key type not-null primary-key) column
+                   (destructuring-bind (name &key type not-null primary-key auto-increment &allow-other-keys) column
                      (declare (ignore type))
                      (let ((name-string (string-upcase name)))
                        (list :name (intern name-string package)
                              :initargs (list (intern name-string :keyword))
                              :not-null not-null
+                             :auto-increment auto-increment
                              :primary-key primary-key))))
                  db-columns))
         :test #'eq

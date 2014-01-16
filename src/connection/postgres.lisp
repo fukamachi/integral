@@ -6,11 +6,15 @@
 (in-package :cl-user)
 (defpackage integral.connection.postgres
   (:use :cl)
+  (:import-from :integral.util
+                :group-by-plist-key)
   (:import-from :dbi
                 :prepare
                 :execute
                 :fetch
-                :<dbi-programming-error>))
+                :<dbi-programming-error>)
+  (:import-from :split-sequence
+                :split-sequence))
 (in-package :integral.connection.postgres)
 
 (cl-syntax:use-syntax :annot)
@@ -30,32 +34,80 @@
             0
             (error e))))))
 
+(defun get-serial-keys (conn table-name)
+  (let ((query
+          (dbi:execute
+           (dbi:prepare conn
+                        (format nil "SELECT relname FROM pg_class WHERE relkind = 'S' AND relname LIKE '~A_%'"
+                                table-name)))))
+    (loop for row = (dbi:fetch query)
+          while row
+          collect (second
+                   (split-sequence #\_ (getf row :|relname|)
+                                   :count 2)))))
+
 @export
 (defun column-definitions (conn table-name)
-  (let* ((sql (format nil "SELECT
-                              f.attname AS name,
-                              pg_catalog.format_type(f.atttypid,f.atttypmod) AS type,
-                              f.attnotnull AS notnull,
-                              CASE
-                                  WHEN p.contype = 'p' THEN 't'
-                                  ELSE 'f'
-                              END AS primary,
-                          FROM pg_attribute f
-                              JOIN pg_class c ON c.oid = f.attrelid
-                              LEFT JOIN pg_constraint p ON p.conrelid = f.attrelid AND f.attnum = ANY (p.conkey)
-                          WHERE c.relkind = 'r'::char
-                              AND c.relname = '~A'
-                              AND f.attnum > 0
-                          ORDER BY f.attnum" table-name))
+  (let* ((serial-keys (get-serial-keys conn table-name))
+         (sql (format nil "SELECT~
+                        ~%    f.attname AS name,~
+                        ~%    pg_catalog.format_type(f.atttypid,f.atttypmod) AS type,~
+                        ~%    f.attnotnull AS notnull,~
+                        ~%    CASE~
+                        ~%        WHEN p.contype = 'p' THEN true~
+                        ~%        ELSE false~
+                        ~%    END AS primary~
+                        ~%FROM pg_attribute f~
+                        ~%    JOIN pg_class c ON c.oid = f.attrelid~
+                        ~%    LEFT JOIN pg_constraint p ON p.conrelid = f.attrelid AND f.attnum = ANY (p.conkey)~
+                        ~%WHERE c.relkind = 'r'::char~
+                        ~%    AND c.relname = '~A'~
+                        ~%    AND f.attnum > 0~
+                        ~%ORDER BY f.attnum" table-name))
          (query (dbi:execute (dbi:prepare conn sql))))
     (loop for column = (dbi:fetch query)
           while column
           collect (list (getf column :|name|)
-                        :type (getf column :|format_type|)
-                        :not-null (string= (getf column :|notnull|) "t")
-                        :primary-key (string= (getf column :|primary|) "t"))))
+                        :type (getf column :|type|)
+                        :not-null (getf column :|notnull|)
+                        :auto-increment (not (null (member (getf column :|name|)
+                                                           serial-keys
+                                                           :test #'string=)))
+                        :primary-key (getf column :|primary|)))))
 
-  )
+@export
+(defun table-indices (conn table-name)
+  (let ((query (dbi:execute (dbi:prepare conn
+                                         (format nil
+                                                 "SELECT~
+                                                ~%    i.relname AS index_name,~
+                                                ~%    a.attname AS column_name,~
+                                                ~%    ix.indisunique AS is_unique,~
+                                                ~%    ix.indisprimary AS is_primary~
+                                                ~%FROM~
+                                                ~%    pg_class t,~
+                                                ~%    pg_class i,~
+                                                ~%    pg_index ix,~
+                                                ~%    pg_attribute a~
+                                                ~%WHERE~
+                                                ~%    t.oid = ix.indrelid~
+                                                ~%    and i.oid = ix.indexrelid~
+                                                ~%    and a.attrelid = t.oid~
+                                                ~%    and a.attnum = ANY(ix.indkey)~
+                                                ~%    and t.relkind = 'r'~
+                                                ~%    and t.relname LIKE '~A'~
+                                                ~%ORDER BY i.relname" table-name)))))
+    (mapcar #'(lambda (plist)
+                (destructuring-bind (index-name &rest column-list) plist
+                  (declare (ignore index-name))
+                  (list :unique-key (getf (first column-list) :|is_unique|)
+                        :primary-key (getf (first column-list) :|is_primary|)
+                        :columns (mapcar #'(lambda (column)
+                                             (getf column :|column_name|))
+                                         column-list))))
+            (group-by-plist-key (dbi:fetch-all query)
+                                :key :|index_name|
+                                :test #'string=))))
 
 (defvar *sequence-name-cache* (make-hash-table :test 'equal))
 

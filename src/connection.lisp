@@ -41,7 +41,7 @@ Same as DBI:CONNECT except this has a simple cache mechanizm."
   (let ((connection-handle (apply #'dbi:connect driver-name args)))
     (setf *db*
           (make-connection :connect-args args
-                               :handle connection-handle))
+                           :handle connection-handle))
     connection-handle))
 
 @export
