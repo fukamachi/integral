@@ -16,14 +16,14 @@
                :uiop)
   :components ((:module "t"
                 :components
-                ((:file "init")
-                 (:file "connection/sqlite3")
-                 (:file "connection/mysql")
-                 (:file "connection/postgres")
-                 (:file "type")
-                 (:file "table")
-                 (:file "migration")
-                 (:file "integral"))))
+                ((:test-file "init")
+                 (:test-file "connection/sqlite3")
+                 (:test-file "connection/mysql")
+                 (:test-file "connection/postgres")
+                 (:test-file "type")
+                 (:test-file "table")
+                 (:test-file "migration")
+                 (:test-file "integral"))))
 
   :defsystem-depends-on (:cl-test-more)
   :perform (test-op :after (op c)
