@@ -22,6 +22,7 @@
                  (:file "connection/postgres")
                  (:file "type")
                  (:file "table")
+                 (:file "migration")
                  (:file "integral"))))
 
   :defsystem-depends-on (:cl-test-more)

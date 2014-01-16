@@ -31,12 +31,13 @@
                  (:file "connection" :depends-on ("connection-drivers" "error"))
                  (:module "connection-drivers"
                   :pathname "connection"
-                  :depends-on ("util")
+                  :depends-on ("type" "util")
                   :components
                   ((:file "mysql")
                    (:file "postgres")
                    (:file "sqlite3")))
-                 (:file "type" :depends-on ("connection" "util"))
+                 (:file "migration" :depends-on ("connection" "table" "column" "util"))
+                 (:file "type" :depends-on ("util"))
                  (:file "error")
                  (:file "util"))))
   :description "Object Relational Mapper for Common Lisp"

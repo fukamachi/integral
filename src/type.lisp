@@ -6,8 +6,6 @@
 (in-package :cl-user)
 (defpackage integral.type
   (:use :cl)
-  (:import-from :integral.connection
-                :database-type)
   (:import-from :integral.util
                 :symbol-name-literally))
 (in-package :integral.type)
@@ -121,9 +119,7 @@
       'text))
 
 (define-column-type serial ()
-  (if (eq (database-type) :postgres)
-      'serial
-      'integer))
+  'integer)
 
 (define-column-type enum (&rest candidates)
   `(:enum ,@(mapcar #'(lambda (candidate)
