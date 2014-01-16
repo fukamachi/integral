@@ -1,5 +1,7 @@
 # Integral
 
+THIS LIBRARY IS NOT COMPLETED. DON'T USE THIS TILL I SAY IT'S READY.
+
 Integral is an object relational mapper for Common Lisp based on [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
 <span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
