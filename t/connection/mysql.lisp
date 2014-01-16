@@ -12,13 +12,18 @@
         :integral.connection.mysql))
 (in-package :integral-test.connection.mysql)
 
-(plan nil)
+(plan 3)
 
 (let ((db (dbi:connect :mysql
                        :database-name "integral_test"
                        :username "root")))
   (dbi:do-sql db "DROP TABLE IF EXISTS tweets")
   (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO_INCREMENT PRIMARY KEY, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
+
+  (is (column-definitions db "tweets")
+      '(("id" :TYPE (integral.type:INT 11) :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)
+        ("status" :TYPE integral.type:TEXT :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL T)
+        ("user" :TYPE (integral.type:VARCHAR 64) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL T)))
 
   (ok (every
        #'equal

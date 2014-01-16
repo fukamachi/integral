@@ -6,6 +6,8 @@
 (in-package :cl-user)
 (defpackage integral.connection.postgres
   (:use :cl)
+  (:import-from :integral.type
+                :dbtype-to-cltype)
   (:import-from :integral.util
                 :group-by-plist-key)
   (:import-from :dbi
@@ -63,17 +65,21 @@
                         ~%WHERE c.relkind = 'r'::char~
                         ~%    AND c.relname = '~A'~
                         ~%    AND f.attnum > 0~
-                        ~%ORDER BY f.attnum" table-name))
+                        ~%ORDER BY f.attnum, p.contype" table-name))
          (query (dbi:execute (dbi:prepare conn sql))))
-    (loop for column = (dbi:fetch query)
-          while column
-          collect (list (getf column :|name|)
-                        :type (getf column :|type|)
-                        :not-null (getf column :|notnull|)
-                        :auto-increment (not (null (member (getf column :|name|)
-                                                           serial-keys
-                                                           :test #'string=)))
-                        :primary-key (getf column :|primary|)))))
+    (delete-duplicates
+     (loop for column = (dbi:fetch query)
+           while column
+           collect (list (getf column :|name|)
+                         :type (dbtype-to-cltype (getf column :|type|))
+                         :auto-increment (not (null (member (getf column :|name|)
+                                                            serial-keys
+                                                            :test #'string=)))
+                         :primary-key (getf column :|primary|)
+                         :not-null (getf column :|notnull|)))
+     :key #'car
+     :test #'string=
+     :from-end t)))
 
 @export
 (defun table-indices (conn table-name)

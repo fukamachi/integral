@@ -16,12 +16,17 @@
                 :connect-to-testdb))
 (in-package :integral-test.connection.sqlite3)
 
-(plan 4)
+(plan 5)
 
 (let ((db (connect-to-testdb)))
-  (dbi:do-sql db "CREATE TABLE tweets (id INTEGER PRIMARY KEY, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
+  (dbi:do-sql db "CREATE TABLE tweets (id INTEGER AUTO INCREMENT PRIMARY KEY NOT NULL, status TEXT NOT NULL, user VARCHAR(64) NOT NULL, UNIQUE (id, user))")
 
   (is (table-primary-keys db "tweets") '("id"))
+
+  (is (column-definitions db "tweets")
+      '(("id" :TYPE INTEGER :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)
+        ("status" :TYPE integral.type:TEXT :AUTO-INCREMENT nil :PRIMARY-KEY NIL :NOT-NULL T)
+        ("user" :TYPE (integral.type:VARCHAR 64) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL T)))
 
   (ok (every
        #'equal

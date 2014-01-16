@@ -12,13 +12,18 @@
         :integral.connection.postgres))
 (in-package :integral-test.connection.postgres)
 
-(plan nil)
+(plan 3)
 
 (let ((db (dbi:connect :postgres
                        :database-name "integral_test"
                        :username "nitro_idiot")))
   (dbi:do-sql db "DROP TABLE IF EXISTS tweets")
   (dbi:do-sql db "CREATE TABLE tweets (id SERIAL PRIMARY KEY, status TEXT NOT NULL, \"user\" VARCHAR(64) NOT NULL, UNIQUE (id, \"user\"))")
+
+  (is (column-definitions db "tweets")
+      '(("id" :TYPE INTEGER :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)
+        ("status" :TYPE integral.type:TEXT :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL T)
+        ("user" :TYPE (integral.type:VARCHAR 64) :AUTO-INCREMENT NIL :PRIMARY-KEY nil :NOT-NULL T)))
 
   (ok (every
        #'equal

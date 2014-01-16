@@ -6,6 +6,8 @@
 (in-package :cl-user)
 (defpackage integral.connection.sqlite3
   (:use :cl)
+  (:import-from :integral.type
+                :dbtype-to-cltype)
   (:import-from :dbi
                 :prepare
                 :execute
@@ -22,21 +24,22 @@
         :|last_insert_id|))
 
 @export
-(defun column-definitions (conn table-name &optional errorp)
+(defun column-definitions (conn table-name)
   ;; FIXME: quote
   (let* ((sql (format nil "PRAGMA table_info(\"~A\")" table-name))
          (query (dbi:execute (dbi:prepare conn sql))))
     (or (loop for column = (dbi:fetch query)
               while column
               collect (let* ((type (getf column :|type|))
-                             (pos (search "AUTO_INCREMENT" type :test #'string-equal)))
+                             (pos (search "AUTO INCREMENT" type :test #'string-equal)))
                         (list (getf column :|name|)
-                              :type (if pos
-                                        (subseq type 0 (1- pos))
-                                        type)
+                              :type (dbtype-to-cltype
+                                     (if pos
+                                         (subseq type 0 (1- pos))
+                                         type))
                               :auto-increment (not (null pos))
-                              :not-null (not (= (getf column :|notnull|) 0))
-                              :primary-key (= (getf column :|pk|) 0))))
+                              :primary-key (= (getf column :|pk|) 1)
+                              :not-null (not (= (getf column :|notnull|) 0)))))
         (error "Table \"~A\" doesn't exist." table-name))))
 
 (defun table-primary-keys (conn table-name)
