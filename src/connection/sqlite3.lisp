@@ -7,7 +7,7 @@
 (defpackage integral.connection.sqlite3
   (:use :cl)
   (:import-from :integral.type
-                :string-to-cltype)
+                :string-to-dbtype)
   (:import-from :dbi
                 :prepare
                 :execute
@@ -33,7 +33,7 @@
               collect (let* ((type (getf column :|type|))
                              (pos (search "AUTO_INCREMENT" type :test #'string-equal)))
                         (list (getf column :|name|)
-                              :type (string-to-cltype
+                              :type (string-to-dbtype
                                      (if pos
                                          (subseq type 0 (1- pos))
                                          type))

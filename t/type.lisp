@@ -14,34 +14,34 @@
 (plan 11)
 
 (is (cltype-to-dbtype 'integer)
-    'integer)
+    :integer)
 (is (cltype-to-dbtype 'integer 10)
     '(:integer 10))
 (is (cltype-to-dbtype 'enum "one" "two" "three")
     '(:enum "one" "two" "three"))
 
-(is (string-to-cltype "CHAR(32)")
+(is (string-to-dbtype "CHAR(32)")
     '(:char 32))
-(is (string-to-cltype "CHARACTER(32)")
+(is (string-to-dbtype "CHARACTER(32)")
     '(:char 32))
-(is (string-to-cltype "char(32)")
+(is (string-to-dbtype "char(32)")
     '(:char 32))
 
-(is (string-to-cltype "text")
-    'integral.type:text)
+(is (string-to-dbtype "text")
+    :text)
 
-(is (string-to-cltype "character varying(32)")
+(is (string-to-dbtype "character varying(32)")
     '(:varchar 32))
 
-(setf (type-alias "MY ORIGINAL TYPE") 'my-original-type)
+(setf (type-alias :MY\ ORIGINAL\ TYPE) :MYOT)
 
-(is (type-alias "MY ORIGINAL TYPE")
-    'my-original-type
+(is (type-alias :MY\ ORIGINAL\ TYPE)
+    :myot
     :test #'eq)
 
-(is (string-to-cltype "MY ORIGINAL TYPE")
-    'my-original-type)
-(is (string-to-cltype "MY ORIGINAL TYPE(128)")
-    '(:my-original-type 128))
+(is (string-to-dbtype "MY ORIGINAL TYPE")
+    :myot)
+(is (string-to-dbtype "MY ORIGINAL TYPE(128)")
+    '(:myot 128))
 
 (finalize)

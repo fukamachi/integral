@@ -21,8 +21,8 @@
   (dbi:do-sql db "CREATE TABLE tweets (id SERIAL PRIMARY KEY, status TEXT NOT NULL, \"user\" VARCHAR(64) NOT NULL, UNIQUE (id, \"user\"))")
 
   (is (column-definitions db "tweets")
-      '(("id" :type integer :auto-increment t :primary-key t :not-null t)
-        ("status" :type integral.type:text :auto-increment nil :primary-key nil :not-null t)
+      '(("id" :type :integer :auto-increment t :primary-key t :not-null t)
+        ("status" :type :text :auto-increment nil :primary-key nil :not-null t)
         ("user" :type (:varchar 64) :auto-increment nil :primary-key nil :not-null t)))
 
   (ok (every

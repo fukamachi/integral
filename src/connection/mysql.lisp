@@ -7,7 +7,7 @@
 (defpackage integral.connection.mysql
   (:use :cl)
   (:import-from :integral.type
-                :string-to-cltype)
+                :string-to-dbtype)
   (:import-from :integral.util
                 :group-by-plist-key)
   (:import-from :dbi
@@ -34,7 +34,7 @@
     (loop for column = (dbi:fetch query)
           while column
           collect (list (getf column :|Field|)
-                        :type (string-to-cltype (getf column :|Type|))
+                        :type (string-to-dbtype (getf column :|Type|))
                         :auto-increment (string= (getf column :|Extra|) "auto_increment")
                         :primary-key (string= (getf column :|Key|) "PRI")
                         :not-null (or (string= (getf column :|Key|) "PRI")

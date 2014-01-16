@@ -7,7 +7,7 @@
 (defpackage integral.connection.postgres
   (:use :cl)
   (:import-from :integral.type
-                :string-to-cltype)
+                :string-to-dbtype)
   (:import-from :integral.util
                 :group-by-plist-key)
   (:import-from :dbi
@@ -71,7 +71,7 @@
      (loop for column = (dbi:fetch query)
            while column
            collect (list (getf column :|name|)
-                         :type (string-to-cltype (getf column :|type|))
+                         :type (string-to-dbtype (getf column :|type|))
                          :auto-increment (not (null (member (getf column :|name|)
                                                             serial-keys
                                                             :test #'string=)))

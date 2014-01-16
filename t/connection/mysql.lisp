@@ -22,7 +22,7 @@
 
   (is (column-definitions db "tweets")
       '(("id" :type (:integer 11) :auto-increment t :primary-key t :not-null t)
-        ("status" :type integral.type:text :auto-increment nil :primary-key nil  :not-null t)
+        ("status" :type :text :auto-increment nil :primary-key nil  :not-null t)
         ("user" :type (:varchar 64) :auto-increment nil :primary-key nil :not-null t)))
 
   (ok (every

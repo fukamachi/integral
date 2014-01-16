@@ -24,9 +24,9 @@
   (is (table-primary-keys db "tweets") '("id"))
 
   (is (column-definitions db "tweets")
-      '(("id" :TYPE INTEGER :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)
-        ("status" :TYPE integral.type:TEXT :AUTO-INCREMENT nil :PRIMARY-KEY NIL :NOT-NULL T)
-        ("user" :TYPE (:VARCHAR 64) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL T)))
+      '(("id" :type :integer :auto-increment t :primary-key t :not-null t)
+        ("status" :type :text :auto-increment nil :primary-key nil :not-null t)
+        ("user" :type (:varchar 64) :auto-increment nil :primary-key nil :not-null t)))
 
   (ok (every
        #'equal

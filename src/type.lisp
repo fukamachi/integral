@@ -60,21 +60,21 @@
   (declare (ignore candidates))
   'string)
 
-(defvar *type-alias-map* (make-hash-table :test 'equal))
+(defvar *type-alias-map* (make-hash-table :test 'eq))
 
 @export
 (defun type-alias (type)
   (nth-value 0
-             (gethash (string-upcase type) *type-alias-map*)))
+             (gethash type *type-alias-map*)))
 
 @export
 (defun (setf type-alias) (alias type)
-  (setf (gethash (string-upcase type) *type-alias-map*)
+  (setf (gethash type *type-alias-map*)
         alias))
 
-(setf (type-alias "CHARACTER") 'char)
-(setf (type-alias "CHARACTER VARYING") 'varchar)
-(setf (type-alias "INT") 'integer)
+(setf (type-alias :CHARACTER) :CHAR)
+(setf (type-alias :CHARACTER\ VARYING) :VARCHAR)
+(setf (type-alias :INT) :INTEGER)
 
 ;;
 ;; Conversion between CL data types and DB's.
@@ -82,31 +82,32 @@
 @export
 (defgeneric cltype-to-dbtype (type &rest args)
   (:method ((type t) &rest args)
-    (if args
-        `(,(intern (string type) :keyword) ,@args)
-        type))
+    (let ((dbtype (intern (string type) :keyword)))
+      (if args
+          `(,dbtype ,@args)
+          dbtype)))
   (:method ((type list) &rest args)
     (declare (ignore args))
     (apply #'cltype-to-dbtype type)))
 
 @export
-(defun string-to-cltype (type &optional (package :integral.type))
+(defun string-to-dbtype (type)
   (declare (type string type))
   (let* ((open-paren-pos (position #\( type))
          (close-paren-pos (and open-paren-pos
                                (position #\) type :start (1+ open-paren-pos)))))
-    (multiple-value-bind (cltype arg)
+    (multiple-value-bind (dbtype arg)
         (if open-paren-pos
             (values
              (string-upcase (subseq type 0 open-paren-pos))
              (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos)))
             (string-upcase type))
-      (let ((cltype (or (type-alias cltype)
-                        (intern cltype package))))
-        (apply #'cltype-to-dbtype
-               (if arg
-                   (list cltype arg)
-                   (list cltype)))))))
+      (let* ((dbtype (intern dbtype :keyword))
+             (dbtype (or (type-alias dbtype)
+                         dbtype)))
+        (if arg
+            (list dbtype arg)
+            dbtype)))))
 
 @export
 (defun is-type-equal (a b)
@@ -133,10 +134,10 @@
 (define-column-type string (&optional length)
   (if length
       `(:varchar ,length)
-      'text))
+      :text))
 
 (define-column-type serial ()
-  'integer)
+  :integer)
 
 (define-column-type enum (&rest candidates)
   `(:enum ,@(mapcar #'(lambda (candidate)
