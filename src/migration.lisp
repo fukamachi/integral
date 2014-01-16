@@ -12,7 +12,8 @@
                 :retrieve-table-column-definitions-by-name)
   (:import-from :integral.table
                 :table-name
-                :database-column-slots)
+                :database-column-slots
+                :dao-table-class)
   (:import-from :integral.column
                 :table-column-name
                 :column-info-for-create-table)
@@ -35,6 +36,10 @@
 (in-package :integral.migration)
 
 (cl-syntax:use-syntax :annot)
+
+@export
+(defvar *auto-migrating-mode* nil
+  "Whether use auto-migrating mode or not.")
 
 (defun compute-migrate-table-columns (class)
   (let ((column-definitions (retrieve-table-column-definitions-by-name
@@ -102,3 +107,11 @@
       (dolist (sql sql-list)
         (multiple-value-bind (sql bind) (yield sql)
           (apply #'dbi:do-sql (get-connection) sql bind))))))
+
+(defmethod initialize-instance :after ((class dao-table-class) &key)
+  (when *auto-migrating-mode*
+    (migrate-table-using-class class)))
+
+(defmethod reinitialize-instance :after ((class dao-table-class) &key)
+  (when *auto-migrating-mode*
+    (migrate-table-using-class class)))
