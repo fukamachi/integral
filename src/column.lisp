@@ -45,10 +45,6 @@
    (not-null :type boolean
              :initarg :not-null
              :initform nil)
-   (default :initarg :default)
-   (unique :type boolean
-           :initarg :unique
-           :initform nil)
    (ghost :type boolean
           :initarg :ghost
           :initform nil
@@ -72,7 +68,7 @@
 @export
 (defgeneric column-info-for-create-table (column)
   (:method ((column table-column-definition))
-    (with-slots (primary-key auto-increment not-null unique default)
+    (with-slots (primary-key auto-increment not-null)
         column
       (let ((col-type (table-column-type column)))
         (when (eq col-type t)
@@ -81,16 +77,12 @@
 
         `(,(table-column-name column)
           :type ,(cltype-to-dbtype col-type)
-          :primary-key ,primary-key
           :auto-increment ,(if (eq (database-type) :postgres)
                                nil
                                (or (eq col-type 'serial)
                                    auto-increment))
-          :not-null ,not-null
-          :unique ,unique
-          ,@(if (slot-boundp column 'default)
-                `(:default ,default)
-                nil))))))
+          :primary-key ,primary-key
+          :not-null ,not-null)))))
 
 @export
 (defgeneric slot-definition-to-plist (slot)
