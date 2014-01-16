@@ -17,7 +17,7 @@
                 :table-definition))
 (in-package :integral-test.migration.postgres)
 
-(plan 9)
+(plan 10)
 
 (disconnect-toplevel)
 
@@ -79,9 +79,9 @@
 
 (multiple-value-bind (new modify old)
     (compute-migrate-table-columns (find-class 'tweet))
-  (declare (ignore old))
   (is new nil)
-  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL))))
+  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
+  (is old nil))
 
 (migrate-table-using-class (find-class 'tweet))
 

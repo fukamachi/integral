@@ -33,6 +33,7 @@
                 :yield
                 :add-column
                 :modify-column
+                :alter-column
                 :drop-column))
 (in-package :integral.migration)
 
@@ -90,16 +91,23 @@
                                    (cerror "Ignore the column modification."
                                            'migration-error
                                            :format-control "Modification of a primary key doesn't supported yet.")
-                                   (list (apply #'modify-column column))))
+                                   (cond
+                                     ((eq (database-type) :postgres)
+                                      (list
+                                       (alter-column (car column) :type (getf (cdr column) :type))
+                                       (alter-column (car column) :not-null (getf (cdr column) :not-null))))
+                                     (T (list (apply #'modify-column column))))))
                              modify-columns)))
           nil)
-      (if (eq (database-type) :sqlite3)
-          (cerror "Ignore the column modification."
-                  'migration-error
-                  :format-control "Column modification was detected, but SQLite3 doesn't support DROP COLUMN.")
-          (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                 (mapcar (lambda (column)
-                           (drop-column (intern (car column) :keyword))) old-columns)))))))
+      (if old-columns
+          (if (eq (database-type) :sqlite3)
+              (cerror "Ignore the column modification."
+                      'migration-error
+                      :format-control "Column modification was detected, but SQLite3 doesn't support DROP COLUMN.")
+              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                     (mapcar (lambda (column)
+                               (drop-column (intern (car column) :keyword))) old-columns)))
+          nil)))))
 
 @export
 (defun migrate-table-using-class (class)
