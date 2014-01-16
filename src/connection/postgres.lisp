@@ -65,6 +65,7 @@
                         ~%WHERE c.relkind = 'r'::char~
                         ~%    AND c.relname = '~A'~
                         ~%    AND f.attnum > 0~
+                        ~%    AND f.atttypid != 0~
                         ~%ORDER BY f.attnum, p.contype" table-name))
          (query (dbi:execute (dbi:prepare conn sql))))
     (delete-duplicates
