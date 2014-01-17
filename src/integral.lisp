@@ -31,6 +31,9 @@
                 :text
                 :varchar
                 :enum
+                :datetime
+                :date
+                :timestamp
                 :define-column-type)
   (:import-from :integral.connection
                 :get-connection
@@ -75,6 +78,9 @@
            :text
            :varchar
            :enum
+           :datetime
+           :date
+           :timestamp
 
            :define-column-type
 

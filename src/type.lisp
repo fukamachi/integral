@@ -57,6 +57,17 @@
   (declare (ignore candidates))
   'string)
 
+@export
+(deftype datetime () 'string)
+
+@export
+(deftype date () 'string)
+
+@export
+(deftype timestamp (&optional length)
+  (declare (ignore length))
+  'string)
+
 (defvar *type-alias-map* (make-hash-table :test 'eq))
 
 @export
