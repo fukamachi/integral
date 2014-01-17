@@ -51,11 +51,6 @@
   'string)
 
 @export
-(deftype char (length)
-  (declare (ignore length))
-  'string)
-
-@export
 (deftype enum (&rest candidates)
   (declare (ignore candidates))
   'string)
