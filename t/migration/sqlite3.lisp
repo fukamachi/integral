@@ -17,7 +17,7 @@
                 :table-definition))
 (in-package :integral-test.migration.sqlite3)
 
-(plan 8)
+(plan 9)
 
 (disconnect-toplevel)
 
@@ -59,11 +59,7 @@
   (is modify nil)
   (is (mapcar #'car old) '("status")))
 
-(handler-bind ((migration-error #'(lambda (e)
-                                    (let ((r (find-restart 'continue e)))
-                                      (when r
-                                        (invoke-restart r))))))
-  (migrate-table-using-class (find-class 'tweet)))
+(migrate-table-using-class (find-class 'tweet))
 
 (is (compute-migrate-table-columns (find-class 'tweet))
     NIL)
@@ -80,17 +76,13 @@
 
 (multiple-value-bind (new modify old)
     (compute-migrate-table-columns (find-class 'tweet))
-  (declare (ignore old))
   (is new nil)
-  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL))))
+  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
+  (is old nil))
 
-(handler-bind ((migration-error #'(lambda (e)
-                                    (let ((r (find-restart 'continue e)))
-                                      (when r
-                                        (invoke-restart r))))))
-  (migrate-table-using-class (find-class 'tweet)))
+(migrate-table-using-class (find-class 'tweet))
 
-(is (compute-migrate-table-columns (find-class 'tweet))
-    NIL)
+(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+    '(NIL nil nil))
 
 (finalize)
