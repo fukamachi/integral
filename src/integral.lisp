@@ -33,8 +33,7 @@
                 :enum
                 :datetime
                 :date
-                :timestamp
-                :define-column-type)
+                :timestamp)
   (:import-from :integral.connection
                 :get-connection
                 :connect-toplevel

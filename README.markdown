@@ -1,7 +1,5 @@
 # Integral
 
-THIS LIBRARY IS NOT COMPLETED. DON'T USE THIS TILL I SAY IT'S READY.
-
 Integral is an object relational mapper for Common Lisp based on [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
 <span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
@@ -10,12 +8,16 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBL](https:
 
 ```common-lisp
 (defclass tweet ()
-    ((id :primary-key t
-         :reader tweet-id)
-     (status :initarg :status
-             :accessor :tweet-status)
-     (user :initarg :user
-           :accessor :tweet-user))
+  ((id :type integer
+       :primary-key t
+       :auto-increment t
+       :reader tweet-id)
+   (status :type text
+           :initarg :status
+           :accessor tweet-status)
+   (user :type (varchar 32)
+         :initarg :user
+         :accessor tweet-user))
   (:metaclass dao-table-class))
 
 (connect-toplevel :mysql
@@ -43,19 +45,21 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBL](https:
   (delete-dao tw))
 ```
 
-## Generating database schema from CLOS definitions
+## How to use
+
+### Generating database schema from CLOS definitions
 
 ```common-lisp
 (defclass tweet ()
-    ((id :type serial
-         :primary-key t
-         :reader tweet-id)
-     (status :type string
-             :initarg :status
-             :accessor :tweet-status)
-     (user :type (varchar 64)
-           :initarg :user
-           :accessor :tweet-user))
+  ((id :type serial
+       :primary-key t
+       :reader tweet-id)
+   (status :type string
+           :initarg :status
+           :accessor :tweet-status)
+   (user :type (varchar 64)
+         :initarg :user
+         :accessor :tweet-user))
   (:metaclass dao-table-class)
   (:keys user))
 
@@ -65,7 +69,7 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBL](https:
 (execute-sql (table-definition 'tweet))
 ```
 
-## Generating a class definition from DB schema
+### Generating a class definition from DB schema
 
 If you'd like to administrate a database directly by writing raw SQLs, or wanna use Integral for an existing database, you can generate slot definitions from it.
 
@@ -76,6 +80,62 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 ```
 
 `:generate-slots` option means slot definitions follow database schema. Note you must establish a database connection before the first `allocate-instance`.
+
+### Auto-migrating mode
+
+If `integral:*auto-migrating-mode*` is set `T`, all class changes will be applied to database tables automatically.
+
+## Symbols
+
+### Connections
+
+* connect-toplevel (driver-name &rest args &key database-name &allow-other-keys)
+* disconnect-toplevel ()
+
+### Classes
+
+* dao-class
+* dao-table-class
+* table-name (class)
+* table-definition (class &key (yield t))
+* migrate-table (class)
+* \*auto-migrating-mode\*
+
+### SQL
+
+* select-dao ((class dao-table-class) &rest expressions)
+* insert-dao ((obj dao-class))
+* create-dao ((class dao-table-class) &rest initargs)
+* update-dao ((obj dao-class))
+* delete-dao ((obj dao-class))
+* execute-sql ((sql string) &rest bind)
+* where
+* order-by
+* group-by
+* limit
+
+### Data types
+
+* serial
+* tinyint
+* smallint
+* mediumint
+* int
+* bigint
+* text
+* varchar
+* enum
+* datetime
+* date
+* timestamp
+
+### Errors
+
+* integral-error
+* connection-not-established-error
+* unknown-primary-key-error
+* type-missing-error
+* migration-error
 
 ## Installation
 
