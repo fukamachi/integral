@@ -199,11 +199,12 @@
     obj))
 
 @export
-(defmethod select-dao ((class dao-table-class) &optional condition)
+(defmethod select-dao ((class dao-table-class) &rest expressions)
   (let ((select-sql (select :*
                       (from (intern (table-name class) :keyword)))))
-    (when condition
-      (add-child select-sql condition))
+
+    (dolist (ex expressions)
+      (add-child select-sql ex))
 
     (multiple-value-bind (sql bind)
         (with-quote-char (yield select-sql))
@@ -215,8 +216,8 @@
                 (dbi:fetch-all result))))))
 
 @export
-(defmethod select-dao ((class symbol) &optional condition)
-  (select-dao (find-class class) condition))
+(defmethod select-dao ((class symbol) &rest expressions)
+  (apply #'select-dao (find-class class) expressions))
 
 (defmethod make-find-sql ((class dao-table-class) &rest pk-values)
   (let ((primary-key (table-primary-key class)))
