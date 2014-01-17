@@ -16,10 +16,10 @@
                :uiop)
   :components ((:module "t"
                 :components
-                ((:test-file "init/sqlite3")
-                 (:test-file "init/mysql")
-                 (:test-file "init/postgres")
-                 (:test-file "init")
+                ((:file "init/sqlite3")
+                 (:file "init/mysql")
+                 (:file "init/postgres")
+                 (:file "init")
                  (:test-file "connection/sqlite3")
                  (:test-file "connection/mysql")
                  (:test-file "connection/postgres")
