@@ -12,6 +12,7 @@
                 :with-quote-char
                 :retrieve-table-column-definitions-by-name)
   (:import-from :integral.column
+                :table-column-name
                 :table-column-definition
                 :auto-increment-p
                 :primary-key-p
@@ -173,6 +174,36 @@ If you want to use another class, specify it as a superclass in the usual way.")
         (if yield
             (yield query)
             query)))))
+
+@export
+(defun table-class-indices (class)
+  (let* ((slots (database-column-slots class))
+         (column-primary-slot (find-if #'primary-key-p slots)))
+    (append
+     (if column-primary-slot
+         (list `(:unique-key t :primary-key t :columns (,(symbol-name-literally
+                                                          (table-column-name column-primary-slot)))))
+         nil)
+     (if (slot-boundp class 'primary-key)
+         (list (list :unique-key t
+                     :primary-key t
+                     :columns (mapcar #'symbol-name-literally
+                                      (ensure-list (car (slot-value class 'primary-key))))))
+         nil)
+     (if (slot-boundp class 'unique-keys)
+         (mapcar (lambda (key)
+                   (list :unique-key t
+                         :primary-key nil
+                         :columns (mapcar #'symbol-name-literally (ensure-list key))))
+                 (slot-value class 'unique-keys))
+         nil)
+     (if (slot-boundp class 'keys)
+         (mapcar (lambda (key)
+                   (list :unique-key nil
+                         :primary-key nil
+                         :columns (mapcar #'symbol-name-literally (ensure-list key))))
+                 (slot-value class 'keys))
+         nil))))
 
 @export
 (defgeneric database-column-slots (class)

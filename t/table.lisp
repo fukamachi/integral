@@ -16,7 +16,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan nil)
+(plan 26)
 
 (disconnect-toplevel)
 
@@ -136,7 +136,12 @@
     (:unique-keys id (status user)))
 
   (is (table-definition 'tweet)
-      "CREATE TABLE `tweets` (`id` BIGINT, `status` TEXT, `user` VARCHAR(64), PRIMARY KEY (`id`), UNIQUE (`id`), UNIQUE (`status`, `user`))"))
+      "CREATE TABLE `tweets` (`id` BIGINT, `status` TEXT, `user` VARCHAR(64), PRIMARY KEY (`id`), UNIQUE (`id`), UNIQUE (`status`, `user`))")
+
+  (is (table-class-indices (find-class 'tweet))
+      '((:unique-key t :primary-key t :columns ("id"))
+        (:unique-key t :primary-key nil :columns ("id"))
+        (:unique-key t :primary-key nil :columns ("status" "user")))))
 
 (diag ":generate-slots t")
 
