@@ -62,7 +62,7 @@
 (is (sxql:yield (car (generate-migration-sql (find-class 'tweet))))
     "ALTER TABLE tweets ADD COLUMN created_at CHAR(8)")
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (compute-migrate-table-columns (find-class 'tweet))
     NIL)
@@ -83,7 +83,7 @@
   (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
   (is old nil))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
     '(nil nil nil))
@@ -105,7 +105,7 @@
   (is modify '(("id" :TYPE :BIGINT :AUTO-INCREMENT NIL :PRIMARY-KEY T :NOT-NULL T)))
   (is old nil))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
     '(nil nil nil))
@@ -128,7 +128,7 @@
 (is (sxql:yield (car (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))))
     "CREATE UNIQUE INDEX user_and_created_at ON tweets (user, created_at)")
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)
@@ -152,7 +152,7 @@
   (is (sxql:yield sql2)
       "CREATE UNIQUE INDEX id_and_user_and_created_at ON tweets (id, user, created_at)"))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)
@@ -177,7 +177,7 @@
   (is (sxql:yield sql2)
       "CREATE INDEX user_and_created_at ON tweets (user, created_at)"))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)

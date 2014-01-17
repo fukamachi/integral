@@ -59,7 +59,7 @@
   (is modify nil)
   (is (mapcar #'car old) '("status")))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (compute-migrate-table-columns (find-class 'tweet))
     NIL)
@@ -80,7 +80,7 @@
   (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
   (is old nil))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
     '(NIL nil nil))
@@ -97,7 +97,7 @@
   (:table-name "tweets")
   (:unique-keys (user created_at)))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)
@@ -114,7 +114,7 @@
   (:table-name "tweets")
   (:unique-keys (id user created_at)))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)
@@ -132,7 +132,7 @@
   (:unique-keys)
   (:keys (user created_at)))
 
-(migrate-table-using-class (find-class 'tweet))
+(migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     NIL)

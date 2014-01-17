@@ -39,6 +39,10 @@
                 :last-insert-id
                 :database-type
                 :with-quote-char)
+  (:import-from :integral.migration
+                :migrate-table)
+  (:import-from :integral.variable
+                :*auto-migrating-mode*)
   (:import-from :integral.util
                 :symbol-name-literally)
   (:import-from :dbi
@@ -57,6 +61,9 @@
            :dao-table-class
            :table-name
            :table-definition
+
+           :*auto-migrating-mode*
+           :migrate-table
 
            ;; DataTypes
            :serial

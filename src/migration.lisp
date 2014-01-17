@@ -52,8 +52,23 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defvar *auto-migrating-mode* nil
-  "Whether use auto-migrating mode or not.")
+(defgeneric migrate-table (class)
+  (:method ((class symbol))
+    (migrate-table (find-class class)))
+  (:method ((class dao-table-class))
+    (let ((sql-list-for-indices (if (eq (database-type) :sqlite3)
+                                    nil
+                                    (generate-migration-sql-for-table-indices class)))
+          (sql-list (generate-migration-sql class)))
+      (dbi:with-transaction (get-connection)
+        (dolist (sql sql-list)
+          (multiple-value-bind (sql bind)
+              (with-quote-char (yield sql))
+            (apply #'dbi:do-sql (get-connection) sql bind)))
+        (dolist (sql sql-list-for-indices)
+          (multiple-value-bind (sql bind)
+              (with-quote-char (yield sql))
+            (apply #'dbi:do-sql (get-connection) sql bind)))))))
 
 (defun compute-migrate-table-columns (class)
   (let ((column-definitions (retrieve-table-column-definitions-by-name
@@ -141,32 +156,6 @@
                          (intern (string-upcase (car column)) :keyword))
                        column-definitions)
          (from tmp-table-name))))))
-
-@export
-(defun migrate-table-using-class (class)
-  (let ((sql-list-for-indices (if (eq (database-type) :sqlite3)
-                                  nil
-                                  (generate-migration-sql-for-table-indices class)))
-        (sql-list (generate-migration-sql class)))
-    (dbi:with-transaction (get-connection)
-      (dolist (sql sql-list)
-        (multiple-value-bind (sql bind)
-            (with-quote-char (yield sql))
-          (apply #'dbi:do-sql (get-connection) sql bind)))
-      (dolist (sql sql-list-for-indices)
-        (multiple-value-bind (sql bind)
-            (with-quote-char (yield sql))
-          (apply #'dbi:do-sql (get-connection) sql bind))))))
-
-#+nil
-(defmethod initialize-instance :after ((class dao-table-class) &key)
-  (when *auto-migrating-mode*
-    (migrate-table-using-class class)))
-
-#+nil
-(defmethod reinitialize-instance :after ((class dao-table-class) &key)
-  (when *auto-migrating-mode*
-    (migrate-table-using-class class)))
 
 (defun generate-migration-sql-for-table-indices (class)
   (let ((db-indices (retrieve-table-indices (get-connection)

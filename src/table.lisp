@@ -19,6 +19,8 @@
                 :ghost-slot-p
                 :column-info-for-create-table
                 :slot-definition-to-plist)
+  (:import-from :integral.variable
+                :*auto-migrating-mode*)
   (:import-from :integral.util
                 :symbol-name-literally
                 :class-inherit-p)
@@ -74,11 +76,17 @@ If you want to use another class, specify it as a superclass in the usual way.")
 
 (defmethod initialize-instance :after ((class dao-table-class) &key)
   (unless (slot-value class 'generate-slots)
-    (setf (initializedp class) t)))
+    (setf (initializedp class) t))
+  (when *auto-migrating-mode*
+    (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
+             class)))
 
 (defmethod reinitialize-instance :after ((class dao-table-class) &key)
   (when (car (slot-value class 'generate-slots))
-    (setf (initializedp class) nil)))
+    (setf (initializedp class) nil))
+  (when *auto-migrating-mode*
+    (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
+             class)))
 
 (defmethod c2mop:direct-slot-definition-class ((class dao-table-class) &key)
   'table-column-definition)
