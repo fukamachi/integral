@@ -11,7 +11,7 @@
         :integral.type))
 (in-package :integral-test.type)
 
-(plan 11)
+(plan 12)
 
 (is (cltype-to-dbtype 'integer)
     :integer)
@@ -19,6 +19,9 @@
     '(:integer 10))
 (is (cltype-to-dbtype 'enum "one" "two" "three")
     '(:enum "one" "two" "three"))
+
+(is (cltype-to-dbtype 'bigint 20 :unsigned)
+    '(:bigint 20 :unsigned))
 
 (is (string-to-dbtype "CHAR(32)")
     '(:char 32))
@@ -32,6 +35,9 @@
 
 (is (string-to-dbtype "character varying(32)")
     '(:varchar 32))
+
+(is (string-to-dbtype "bigint(20) unsigned")
+    '(:bigint 20 :unsigned))
 
 (setf (type-alias :MY\ ORIGINAL\ TYPE) :MYOT)
 

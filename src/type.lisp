@@ -8,6 +8,8 @@
   (:use :cl)
   (:import-from :integral.util
                 :symbol-name-literally)
+  (:import-from :split-sequence
+                :split-sequence)
   (:import-from :alexandria
                 :ensure-list))
 (in-package :integral.type)
@@ -87,21 +89,26 @@
 
 @export
 (defun string-to-dbtype (type)
-  (declare (type string type))
+  (setf type (string-upcase type))
   (let* ((open-paren-pos (position #\( type))
          (close-paren-pos (and open-paren-pos
                                (position #\) type :start (1+ open-paren-pos)))))
-    (multiple-value-bind (dbtype arg)
+    (destructuring-bind (dbtype &rest args)
         (if open-paren-pos
-            (values
-             (string-upcase (subseq type 0 open-paren-pos))
-             (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos)))
-            (string-upcase type))
+            (remove
+             nil
+             (list* (subseq type 0 open-paren-pos)
+                    (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos))
+                    (if (< (1+ close-paren-pos) (length type))
+                        (mapcar (lambda (val) (intern val :keyword))
+                                (split-sequence #\Space type :start (1+ close-paren-pos) :remove-empty-subseqs t))
+                        nil)))
+            (list type))
       (let* ((dbtype (intern dbtype :keyword))
              (dbtype (or (type-alias dbtype)
                          dbtype)))
-        (if arg
-            (list dbtype arg)
+        (if args
+            (cons dbtype args)
             dbtype)))))
 
 @export
