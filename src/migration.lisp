@@ -118,10 +118,12 @@
             (with-quote-char (yield sql))
           (apply #'dbi:do-sql (get-connection) sql bind))))))
 
+#+nil
 (defmethod initialize-instance :after ((class dao-table-class) &key)
   (when *auto-migrating-mode*
     (migrate-table-using-class class)))
 
+#+nil
 (defmethod reinitialize-instance :after ((class dao-table-class) &key)
   (when *auto-migrating-mode*
     (migrate-table-using-class class)))
