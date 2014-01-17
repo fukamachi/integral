@@ -57,9 +57,6 @@
         (query (dbi:execute
                 (dbi:prepare conn (format nil "PRAGMA index_list(~A)" table-name)))))
     (append
-     (if primary-keys
-         (list (list :unique-key t :primary-key t :columns primary-keys))
-         nil)
      (loop for index = (dbi:fetch query)
            while index
            collect
@@ -74,7 +71,10 @@
                                     (equal columns primary-keys))))
              (when primary-key
                (setf primary-keys nil))
-             (list
-              :unique-key unique-key
-              :primary-key primary-key
-              :columns columns))))))
+             (list (getf index :|name|)
+                   :unique-key unique-key
+                   :primary-key primary-key
+                   :columns columns)))
+     (if primary-keys
+         (list (list "PRIMARY" :unique-key t :primary-key t :columns primary-keys))
+         nil))))

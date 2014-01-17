@@ -17,7 +17,7 @@
                 :table-definition))
 (in-package :integral-test.migration.sqlite3)
 
-(plan 9)
+(plan 12)
 
 (disconnect-toplevel)
 
@@ -84,5 +84,57 @@
 
 (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
     '(NIL nil nil))
+
+(defclass tweet ()
+  ((id :type bigint
+       :auto-increment t
+       :primary-key t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (created_at :type (char 8)))
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:unique-keys (user created_at)))
+
+(migrate-table-using-class (find-class 'tweet))
+
+(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    NIL)
+
+(defclass tweet ()
+  ((id :type bigint
+       :auto-increment t
+       :primary-key t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (created_at :type (char 8)))
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:unique-keys (id user created_at)))
+
+(migrate-table-using-class (find-class 'tweet))
+
+(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    NIL)
+
+(defclass tweet ()
+  ((id :type bigint
+       :auto-increment t
+       :primary-key t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (created_at :type (char 8)))
+  (:metaclass dao-table-class)
+  (:table-name "tweets")
+  (:unique-keys)
+  (:keys (user created_at)))
+
+(migrate-table-using-class (find-class 'tweet))
+
+(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    NIL)
 
 (finalize)

@@ -85,7 +85,8 @@
 
 @export
 (defun table-indices (conn table-name)
-  (let ((query (dbi:execute (dbi:prepare conn
+  (let ((columns (mapcar #'car (column-definitions conn table-name)))
+        (query (dbi:execute (dbi:prepare conn
                                          (format nil
                                                  "SELECT~
                                                 ~%    i.relname AS index_name,~
@@ -107,12 +108,15 @@
                                                 ~%ORDER BY i.relname" table-name)))))
     (mapcar #'(lambda (plist)
                 (destructuring-bind (index-name &rest column-list) plist
-                  (declare (ignore index-name))
-                  (list :unique-key (getf (first column-list) :|is_unique|)
+                  (list index-name
+                        :unique-key (getf (first column-list) :|is_unique|)
                         :primary-key (getf (first column-list) :|is_primary|)
-                        :columns (mapcar #'(lambda (column)
-                                             (getf column :|column_name|))
-                                         column-list))))
+                        :columns (sort (mapcar #'(lambda (column)
+                                                   (getf column :|column_name|))
+                                               column-list)
+                                       (lambda (a b)
+                                           (< (position a columns :test #'string=)
+                                              (position b columns :test #'string=)))))))
             (group-by-plist-key (dbi:fetch-all query)
                                 :key :|index_name|
                                 :test #'string=))))

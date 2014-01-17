@@ -53,7 +53,9 @@
                                table-name))))
     (mapcar #'(lambda (plist)
                 (destructuring-bind (index-name &rest column-list) plist
-                  (list :unique-key (= (getf (first column-list) :|non_unique|) 0)
+                  (list index-name
+                        :unique-key (or (string= index-name "PRIMARY")
+                                        (= (getf (first column-list) :|non_unique|) 0))
                         :primary-key (string= index-name "PRIMARY")
                         :columns (mapcar #'(lambda (column)
                                              (getf column :|column_name|))

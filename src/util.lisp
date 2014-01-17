@@ -95,10 +95,10 @@
                          sub-b)))))))
 
 @export
-(defun list-diff (a b &key sort-key (sort-fn #'string<) (key #'identity) (test #'string=))
+(defun list-diff (a b &key sort-key sort-key-a sort-key-b (sort-fn #'string<) (key #'identity) (test #'string=))
   "Compute differences two lists.
 Note this can be applied for a list of string-designators."
-  (%list-diff (sort (copy-list a) sort-fn :key (or sort-key #'identity))
-              (sort (copy-list b) sort-fn :key (or sort-key #'identity))
+  (%list-diff (sort (copy-list a) sort-fn :key (or sort-key-a sort-key #'identity))
+              (sort (copy-list b) sort-fn :key (or sort-key-b sort-key #'identity))
               :key key
               :test test))

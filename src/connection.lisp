@@ -111,6 +111,15 @@ If no connections are established, NIL will be returned."
    conn table-name))
 
 @export
+(defun retrieve-table-indices (conn table-name)
+  (funcall
+   (ecase (connection-driver-type conn)
+     (:mysql #'integral.connection.mysql:table-indices)
+     (:postgres #'integral.connection.postgres:table-indices)
+     (:sqlite3 #'integral.connection.sqlite3:table-indices))
+   conn table-name))
+
+@export
 (defun last-insert-id (conn &optional table-name serial-key-name)
   "Return the last value of a serial column."
 

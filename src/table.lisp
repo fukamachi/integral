@@ -197,7 +197,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
                          :columns (mapcar #'symbol-name-literally (ensure-list key))))
                  (slot-value class 'unique-keys))
          nil)
-     (if (slot-boundp class 'keys)
+     (if (and (slot-boundp class 'keys)
+              (not (eq (database-type) :sqlite3)))
          (mapcar (lambda (key)
                    (list :unique-key nil
                          :primary-key nil

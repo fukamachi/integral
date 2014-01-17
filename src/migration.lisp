@@ -10,12 +10,14 @@
                 :get-connection
                 :database-type
                 :retrieve-table-column-definitions-by-name
+                :retrieve-table-indices
                 :with-quote-char)
   (:import-from :integral.table
                 :table-name
                 :database-column-slots
                 :dao-table-class
-                :table-definition)
+                :table-definition
+                :table-class-indices)
   (:import-from :integral.column
                 :table-column-name
                 :column-info-for-create-table)
@@ -38,6 +40,10 @@
                 :modify-column
                 :alter-column
                 :drop-column
+                :add-primary-key
+                :drop-primary-key
+                :create-index
+                :drop-index
                 :rename-to)
   (:import-from :alexandria
                 :remove-from-plist))
@@ -138,9 +144,16 @@
 
 @export
 (defun migrate-table-using-class (class)
-  (let ((sql-list (generate-migration-sql class)))
+  (let ((sql-list-for-indices (if (eq (database-type) :sqlite3)
+                                  nil
+                                  (generate-migration-sql-for-table-indices class)))
+        (sql-list (generate-migration-sql class)))
     (dbi:with-transaction (get-connection)
       (dolist (sql sql-list)
+        (multiple-value-bind (sql bind)
+            (with-quote-char (yield sql))
+          (apply #'dbi:do-sql (get-connection) sql bind)))
+      (dolist (sql sql-list-for-indices)
         (multiple-value-bind (sql bind)
             (with-quote-char (yield sql))
           (apply #'dbi:do-sql (get-connection) sql bind))))))
@@ -154,3 +167,39 @@
 (defmethod reinitialize-instance :after ((class dao-table-class) &key)
   (when *auto-migrating-mode*
     (migrate-table-using-class class)))
+
+(defun generate-migration-sql-for-table-indices (class)
+  (let ((db-indices (retrieve-table-indices (get-connection)
+                                            (table-name class)))
+        (class-indices (table-class-indices class)))
+    (multiple-value-bind (same new old)
+        (list-diff class-indices db-indices
+                   :sort-key-b (lambda (index)
+                                 (princ-to-string (cdr index)))
+                   :sort-key #'princ-to-string
+                   :test #'(lambda (a b)
+                             (equal a (cdr b))))
+      (declare (ignore same))
+      (append
+       (mapcar (lambda (old)
+                 (destructuring-bind (index-name &key primary-key &allow-other-keys) old
+                   (if primary-key
+                       (alter-table (intern (table-name class) :keyword)
+                         (drop-primary-key))
+                       (apply #'drop-index index-name
+                              (if (eq (database-type) :mysql)
+                                  (list :on (intern (table-name class) :keyword))
+                                  nil)))))
+               old)
+       (mapcar (lambda (new)
+                 (let ((columns (mapcar (lambda (column)
+                                          (intern column :keyword))
+                                        (getf new :columns))))
+                   (if (getf new :primary-key)
+                       (alter-table (intern (table-name class) :keyword)
+                         (apply #'add-primary-key columns))
+                       (create-index (format nil "~{~A~^_and_~}" columns)
+                                     :unique (getf new :unique-key)
+                                     :on (list* (intern (table-name class) :keyword)
+                                                columns)))))
+               new)))))
