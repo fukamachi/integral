@@ -64,15 +64,14 @@ If you want to use another class, specify it as a superclass in the usual way.")
                  :accessor initializedp))
   (:documentation "Metaclass to define classes for your database-access objects as regular CLOS classes."))
 
-(defmethod allocate-instance :before ((class dao-table-class) &key)
-  (unless (initializedp class)
-    (initialize-dao-table-class class)))
-
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
   (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
     (setf (getf initargs :direct-superclasses)
           (cons (find-class 'dao-class) direct-superclasses)))
-  (apply #'call-next-method class initargs))
+  (unless (and (slot-boundp class '%initialized)
+               (initializedp class))
+    (initialize-dao-table-class
+     (apply #'call-next-method class initargs))))
 
 (defmethod initialize-instance :after ((class dao-table-class) &key)
   (unless (slot-value class 'generate-slots)
@@ -280,4 +279,5 @@ If you want to use another class, specify it as a superclass in the usual way.")
        :metaclass (class-name (class-of class))
        :generate-slots '(t)))
 
-    (setf (initializedp class) t)))
+    (setf (initializedp class) t)
+    class))
