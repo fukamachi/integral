@@ -70,7 +70,7 @@
 @export
 (defgeneric column-info-for-create-table (column)
   (:method ((column table-column-definition))
-    (with-slots (primary-key auto-increment not-null)
+    (with-slots (auto-increment not-null)
         column
       (let ((col-type (table-column-type column)))
         (when (eq col-type t)
@@ -84,7 +84,7 @@
                              (:sqlite3 nil)
                              (:mysql (or (eq col-type 'serial)
                                          auto-increment)))
-          :primary-key ,primary-key
+          :primary-key ,(primary-key-p column)
           :not-null ,not-null)))))
 
 @export

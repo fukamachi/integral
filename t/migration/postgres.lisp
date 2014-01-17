@@ -17,7 +17,7 @@
                 :table-definition))
 (in-package :integral-test.migration.postgres)
 
-(plan 10)
+(plan 14)
 
 (disconnect-toplevel)
 
@@ -85,7 +85,29 @@
 
 (migrate-table-using-class (find-class 'tweet))
 
-(is (compute-migrate-table-columns (find-class 'tweet))
-    NIL)
+(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+    '(nil nil nil))
+
+(defclass tweet ()
+  ((id :type bigint
+       :primary-key t
+       :auto-increment t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (created_at :type (char 8)))
+  (:metaclass dao-table-class)
+  (:table-name "tweets"))
+
+(multiple-value-bind (new modify old)
+    (compute-migrate-table-columns (find-class 'tweet))
+  (is new nil)
+  (is modify '(("id" :TYPE :BIGINT :AUTO-INCREMENT NIL :PRIMARY-KEY T :NOT-NULL T)))
+  (is old nil))
+
+(migrate-table-using-class (find-class 'tweet))
+
+(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+    '(nil nil nil))
 
 (finalize)

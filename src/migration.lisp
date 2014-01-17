@@ -21,8 +21,6 @@
                 :column-info-for-create-table)
   (:import-from :integral.type
                 :is-type-equal)
-  (:import-from :integral.error
-                :migration-error)
   (:import-from :integral.util
                 :list-diff
                 :symbol-name-literally)
@@ -40,7 +38,9 @@
                 :modify-column
                 :alter-column
                 :drop-column
-                :rename-to))
+                :rename-to)
+  (:import-from :alexandria
+                :remove-from-plist))
 (in-package :integral.migration)
 
 (cl-syntax:use-syntax :annot)
@@ -95,16 +95,17 @@
           (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                  (mapcan (lambda (column)
                            (rplaca column (intern (car column) :keyword))
-                           (if (getf (cdr column) :primary-key)
-                               (cerror "Ignore the column modification."
-                                       'migration-error
-                                       :format-control "Modification of a primary key doesn't supported yet.")
-                               (cond
-                                 ((eq (database-type) :postgres)
-                                  (list
-                                   (alter-column (car column) :type (getf (cdr column) :type))
-                                   (alter-column (car column) :not-null (getf (cdr column) :not-null))))
-                                 (T (list (apply #'modify-column column))))))
+                           (cond
+                             ((eq (database-type) :postgres)
+                              (list
+                               (alter-column (car column) :type (getf (cdr column) :type))
+                               (alter-column (car column) :not-null (getf (cdr column) :not-null))))
+                             ((getf (cdr column) :primary-key)
+                              (list
+                               (apply #'modify-column
+                                      (car column)
+                                      (remove-from-plist (cdr column) :primary-key))))
+                             (T (list (apply #'modify-column column)))))
                          modify-columns))
           nil)
       (if old-columns
