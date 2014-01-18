@@ -76,18 +76,22 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (apply #'call-next-method class initargs))
 
 (defmethod initialize-instance :after ((class dao-table-class) &key)
-  (unless (slot-value class 'generate-slots)
-    (setf (initializedp class) t))
-  (when *auto-migrating-mode*
-    (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
-             class)))
+  (let ((generate-slots (car (slot-value class 'generate-slots))))
+    (unless generate-slots
+      (setf (initializedp class) t))
+    (when (and *auto-migrating-mode*
+               (not generate-slots))
+      (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
+               class))))
 
 (defmethod reinitialize-instance :after ((class dao-table-class) &key)
-  (when (car (slot-value class 'generate-slots))
-    (setf (initializedp class) nil))
-  (when *auto-migrating-mode*
-    (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
-             class)))
+  (let ((generate-slots (car (slot-value class 'generate-slots))))
+    (when generate-slots
+      (setf (initializedp class) nil))
+    (when (and *auto-migrating-mode*
+               (not generate-slots))
+      (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
+               class))))
 
 (defmethod c2mop:direct-slot-definition-class ((class dao-table-class) &key)
   'table-column-definition)
