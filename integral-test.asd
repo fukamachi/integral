@@ -32,6 +32,11 @@
 
   :defsystem-depends-on (:cl-test-more)
   :perform (test-op :after (op c)
-                    (funcall (intern #. (string :run-test-system) :cl-test-more)
-                             c)
+                    (let* ((sql-log (intern #.(string :*sql-log-stream*) (find-package :integral.database)))
+                           (val (symbol-value sql-log)))
+                      (setf (symbol-value sql-log) nil)
+                      (unwind-protect
+                           (funcall (intern #.(string :run-test-system) :cl-test-more)
+                                    c)
+                        (setf (symbol-value sql-log) val)))
                     (asdf:clear-system c)))
