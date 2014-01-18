@@ -66,12 +66,25 @@ If you want to use another class, specify it as a superclass in the usual way.")
                  :accessor initializedp))
   (:documentation "Metaclass to define classes for your database-access objects as regular CLOS classes."))
 
+(defparameter *oid-slot-definition*
+  '(:name %oid :col-type serial :auto-increment t :primary-key t :readers (getoid)))
+
+(defun initargs-contains-primary-key (initargs)
+  (or (car (getf initargs :generate-slots))
+      (getf initargs :primary-key)
+      (find-if (lambda (slot)
+                 (getf slot :primary-key))
+               (getf initargs :direct-slots))))
+
 (defmethod allocate-instance :before ((class dao-table-class) &key)
   (unless (and (slot-boundp class '%initialized)
                (initializedp class))
     (initialize-dao-table-class class)))
 
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
+  (unless (initargs-contains-primary-key initargs)
+    (push *oid-slot-definition* (getf initargs :direct-slots)))
+
   (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
     (setf (getf initargs :direct-superclasses)
           (cons (find-class 'dao-class) direct-superclasses)))
@@ -86,14 +99,22 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))
 
-(defmethod reinitialize-instance :after ((class dao-table-class) &key)
-  (let ((generate-slots (car (slot-value class 'generate-slots))))
-    (when generate-slots
-      (setf (initializedp class) nil))
-    (when (and *auto-migration-mode*
-               (not generate-slots))
-      (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
-               class))))
+(defmethod reinitialize-instance :around ((class dao-table-class) &rest initargs)
+  (if (initargs-contains-primary-key initargs)
+      (setf (getf initargs :direct-slots)
+            (remove '%oid (getf initargs :direct-slots)
+                    :key #'car
+                    :test #'eq))
+      (push *oid-slot-definition* (getf initargs :direct-slots)))
+  (prog1
+      (apply #'call-next-method class initargs)
+    (let ((generate-slots (car (slot-value class 'generate-slots))))
+      (when generate-slots
+        (setf (initializedp class) nil))
+      (when (and *auto-migration-mode*
+                 (not generate-slots))
+        (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
+                 class)))))
 
 (defmethod c2mop:direct-slot-definition-class ((class dao-table-class) &key)
   'table-column-definition)
