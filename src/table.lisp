@@ -232,23 +232,6 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (mapcar #'c2mop:slot-definition-name
             (database-column-slots class))))
 
-@export
-(defgeneric validate-table-column-definitions (class)
-  (:method ((class dao-table-class))
-    (let ((slot-names (mapcar #'symbol-name-literally (database-column-slot-names class)))
-          (db-columns (retrieve-table-column-definitions-by-name
-                       (get-connection)
-                       (table-name class))))
-      (loop for slot-name in slot-names
-            unless (find slot-name db-columns :test #'string= :key #'car)
-              collect slot-name into missing-slots
-            finally
-               (when missing-slots
-                 (error "Class slots ~A of ~A are missing in database table '~A'."
-                        missing-slots
-                        (class-name class)
-                        (table-name class)))))))
-
 (defgeneric initialize-dao-table-class (class)
   (:method ((class dao-table-class))
     (when (initializedp class)
