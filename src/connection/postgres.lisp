@@ -125,7 +125,8 @@
 
 (defun default-sequence-name (conn table-name serial-key-name)
   (let ((cache (gethash table-name *sequence-name-cache*)))
-    (when (gethash serial-key-name cache)
+    (when (and cache
+               (gethash serial-key-name cache))
       (return-from default-sequence-name
         (gethash serial-key-name cache))))
 
