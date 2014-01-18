@@ -97,8 +97,9 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * dao-class
 * dao-table-class
 * table-name (class)
-* table-definition (class &key (yield t))
+* table-definition (class &key (yield t) if-not-exists)
 * migrate-table (class)
+* ensure-table-exists (class)
 * \*auto-migration-mode\*
 
 ### SQL

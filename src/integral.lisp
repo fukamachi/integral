@@ -14,7 +14,8 @@
                 :table-definition
                 :table-serial-key
                 :table-primary-key
-                :database-column-slot-names)
+                :database-column-slot-names
+                :ensure-table-exists)
   (:import-from :integral.database
                 :retrieve-sql
                 :execute-sql)
@@ -59,6 +60,7 @@
            :dao-table-class
            :table-name
            :table-definition
+           :ensure-table-exists
 
            :retrieve-sql
            :execute-sql

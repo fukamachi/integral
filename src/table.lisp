@@ -19,6 +19,8 @@
                 :ghost-slot-p
                 :column-info-for-create-table
                 :slot-definition-to-plist)
+  (:import-from :integral.database
+                :execute-sql)
   (:import-from :integral.variable
                 :*auto-migration-mode*)
   (:import-from :integral.util
@@ -160,15 +162,17 @@ If you want to use another class, specify it as a superclass in the usual way.")
           nil))))
 
 @export
-(defgeneric table-definition (class &key yield)
-  (:method ((class symbol) &key (yield t))
-    (table-definition (find-class class) :yield yield))
-  (:method ((class dao-table-class) &key (yield t))
+(defgeneric table-definition (class &key yield if-not-exists)
+  (:method ((class symbol) &key (yield t) if-not-exists)
+    (table-definition (find-class class) :yield yield :if-not-exists if-not-exists))
+  (:method ((class dao-table-class) &key (yield t) if-not-exists)
     (with-quote-char
       (let* ((sqlite3-p (eq :sqlite3 (database-type)))
              (query (apply #'sxql:make-statement
                            :create-table
-                           (intern (table-name class) :keyword)
+                           (list
+                            (intern (table-name class) :keyword)
+                            :if-not-exists if-not-exists)
                            (mapcar
                             #'column-info-for-create-table
                             (database-column-slots class))
@@ -231,6 +235,15 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:method ((class dao-table-class))
     (mapcar #'c2mop:slot-definition-name
             (database-column-slots class))))
+
+@export
+(defgeneric ensure-table-exists (class)
+  (:method ((class symbol))
+    (ensure-table-exists (find-class class)))
+  (:method ((class dao-table-class))
+    (execute-sql (table-definition class
+                                   :yield nil
+                                   :if-not-exists t))))
 
 (defgeneric initialize-dao-table-class (class)
   (:method ((class dao-table-class))

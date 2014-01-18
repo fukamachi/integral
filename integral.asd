@@ -26,7 +26,7 @@
   :components ((:module "src"
                 :components
                 ((:file "integral" :depends-on ("connection" "table" "database" "migration" "type" "error" "variable"))
-                 (:file "table" :depends-on ("connection" "column" "variable" "util"))
+                 (:file "table" :depends-on ("connection" "column" "database" "variable" "util"))
                  (:file "column" :depends-on ("connection" "type"))
                  (:file "connection" :depends-on ("connection-drivers" "error"))
                  (:module "connection-drivers"
