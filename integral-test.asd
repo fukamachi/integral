@@ -34,7 +34,7 @@
   :perform (test-op :after (op c)
                     (let* ((sql-log (intern #.(string :*sql-log-stream*) (find-package :integral.database)))
                            (val (symbol-value sql-log)))
-                      (setf (symbol-value sql-log) nil)
+                      (setf (symbol-value sql-log) (make-broadcast-stream))
                       (unwind-protect
                            (funcall (intern #.(string :run-test-system) :cl-test-more)
                                     c)
