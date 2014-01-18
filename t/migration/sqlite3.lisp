@@ -11,8 +11,7 @@
         :integral-test.init
         :cl-test-more)
   (:import-from :integral.migration
-                :compute-migrate-table-columns
-                :generate-migration-sql)
+                :compute-migrate-table-columns)
   (:import-from :integral.table
                 :table-definition))
 (in-package :integral-test.migration.sqlite3)

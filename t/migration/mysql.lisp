@@ -12,7 +12,7 @@
         :cl-test-more)
   (:import-from :integral.migration
                 :compute-migrate-table-columns
-                :generate-migration-sql)
+                :make-migration-sql)
   (:import-from :integral.table
                 :table-definition))
 (in-package :integral-test.migration.mysql)
@@ -59,7 +59,7 @@
   (is modify nil)
   (is (mapcar #'car old) '("status")))
 
-(is (sxql:yield (car (generate-migration-sql (find-class 'tweet))))
+(is (sxql:yield (car (make-migration-sql (find-class 'tweet))))
     "ALTER TABLE tweets ADD COLUMN created_at CHAR(8)")
 
 (migrate-table (find-class 'tweet))
