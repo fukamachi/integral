@@ -209,7 +209,9 @@
                               (rplaca column (intern (car column) :keyword))
                               (apply #'add-column
                                      (append column
-                                             (slot-column-position-arg (car column)))))
+                                             (if (eq (database-type) :postgres)
+                                                 nil
+                                                 (slot-column-position-arg (car column))))))
                             new-columns))
              nil)
          (if modify-columns
