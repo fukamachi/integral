@@ -29,7 +29,6 @@
                 :tinyint
                 :smallint
                 :mediumint
-                :int
                 :bigint
                 :text
                 :varchar
@@ -73,7 +72,6 @@
            :tinyint
            :smallint
            :mediumint
-           :int
            :bigint
            :text
            :varchar

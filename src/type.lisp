@@ -35,11 +35,6 @@
   'integer)
 
 @export
-(deftype int (&optional width)
-  (declare (ignore width))
-  'integer)
-
-@export
 (deftype bigint (&optional width)
   (declare (ignore width))
   'integer)
