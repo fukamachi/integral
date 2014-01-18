@@ -31,7 +31,7 @@
    (user :col-type (:varchar 64)
          :initarg :user
          :accessor :tweet-user))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:primary-key (id))
   (:unique-keys id (status user)))

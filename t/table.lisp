@@ -24,17 +24,17 @@
   (setf (find-class 'tweet) nil))
 
 (defclass tweet () ()
-  (:metaclass dao-table-class))
+  (:metaclass <dao-table-class>))
 
 (is (table-name 'tweet) "tweet")
 (is (c2mop:class-direct-superclasses (find-class 'tweet))
-    (list (find-class 'dao-class))
-    "tweet inherits dao-class implicitly")
+    (list (find-class '<dao-class>))
+    "tweet inherits <dao-class> implicitly")
 
-(defclass my-dao-class (dao-class) ())
+(defclass my-dao-class (<dao-class>) ())
 
 (defclass tweet (my-dao-class) ()
-  (:metaclass dao-table-class))
+  (:metaclass <dao-table-class>))
 
 (is (c2mop:class-direct-superclasses (find-class 'tweet))
     (list (find-class 'my-dao-class))
@@ -44,10 +44,10 @@
   ((id :primary-key t)
    (status)
    (user))
-  (:metaclass dao-table-class))
+  (:metaclass <dao-table-class>))
 
 (is-error (table-definition 'tweet)
-          'type-missing-error)
+          '<type-missing-error>)
 
 (defclass tweet ()
   ((id :type serial
@@ -57,7 +57,7 @@
            :accessor :tweet-status)
    (user :type (varchar 64)
          :accessor :tweet-user))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (is (table-name 'tweet) "tweets")
@@ -79,7 +79,7 @@
      (%cache :type hash-table
              :initform (make-hash-table)
              :ghost t))
-    (:metaclass dao-table-class)
+    (:metaclass <dao-table-class>)
     (:table-name "tweets"))
 
   (is (table-definition 'tweet)
@@ -95,7 +95,7 @@
              :accessor :tweet-status)
      (user :col-type (:varchar 64)
            :accessor :tweet-user))
-    (:metaclass dao-table-class)
+    (:metaclass <dao-table-class>)
     (:table-name "tweets")
     (:keys id))
 
@@ -111,7 +111,7 @@
              :accessor :tweet-status)
      (user :col-type (:varchar 64)
            :accessor :tweet-user))
-    (:metaclass dao-table-class)
+    (:metaclass <dao-table-class>)
     (:table-name "tweets")
     (:primary-key (id))
     (:keys id))
@@ -130,7 +130,7 @@
      (user :col-type (:varchar 64)
            :initarg :user
            :accessor :tweet-user))
-    (:metaclass dao-table-class)
+    (:metaclass <dao-table-class>)
     (:table-name "tweets")
     (:primary-key (id))
     (:unique-keys id (status user)))
@@ -147,7 +147,7 @@
 
 (setf (find-class 'tweet) nil)
 (defclass tweet () ()
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:generate-slots t))
 
@@ -156,7 +156,7 @@
     "No slots.")
 
 (is-error (make-instance 'tweet)
-          'connection-not-established-error
+          '<connection-not-established-error>
           "Can't allocate an instance before any db connections are established.")
 
 (connect-to-testdb)
@@ -174,7 +174,7 @@
 ;; Redefinition
 
 (defclass tweet () ()
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:generate-slots t))
 
@@ -187,7 +187,7 @@
 (defclass tweet ()
   ((user :initarg :user
          :accessor tweet-user))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:generate-slots t))
 

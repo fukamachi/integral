@@ -7,7 +7,7 @@
 (defpackage integral.connection
   (:use :cl)
   (:import-from :integral.error
-                :connection-not-established-error)
+                :<connection-not-established-error>)
   (:import-from :dbi
                 :connection-driver-type
                 :connect
@@ -65,7 +65,7 @@ If no connections established, this do nothing."
   "Return the current established connection handle."
 
   (unless (connected-p)
-    (error 'connection-not-established-error))
+    (error '<connection-not-established-error>))
 
   (let ((handle (connection-handle *db*)))
     (if (dbi:ping handle)

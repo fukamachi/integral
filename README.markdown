@@ -18,7 +18,7 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBL](https:
    (user :type (varchar 32)
          :initarg :user
          :accessor tweet-user))
-  (:metaclass dao-table-class))
+  (:metaclass <dao-table-class>))
 
 (connect-toplevel :mysql
                   :database-name "myapp"
@@ -60,7 +60,7 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBL](https:
    (user :type (varchar 64)
          :initarg :user
          :accessor :tweet-user))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:keys user))
 
 (table-definition 'tweet)
@@ -75,7 +75,7 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 
 ```common-lisp
 (defclass tweet () ()
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:generate-slots t))
 ```
 
@@ -94,8 +94,8 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### Classes
 
-* dao-class
-* dao-table-class
+* <dao-class>
+* <dao-table-class>
 * table-name (class)
 * table-definition (class &key (yield t) if-not-exists)
 * migrate-table (class)
@@ -105,11 +105,11 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### SQL
 
-* select-dao ((class dao-table-class) &rest expressions)
-* insert-dao ((obj dao-class))
-* create-dao ((class dao-table-class) &rest initargs)
-* update-dao ((obj dao-class))
-* delete-dao ((obj dao-class))
+* select-dao ((class <dao-table-class>) &rest expressions)
+* insert-dao ((obj <dao-class>))
+* create-dao ((class <dao-table-class>) &rest initargs)
+* update-dao ((obj <dao-class>))
+* delete-dao ((obj <dao-class>))
 * execute-sql ((sql string) &rest bind)
 * where
 * order-by
@@ -133,11 +133,11 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### Errors
 
-* integral-error
-* connection-not-established-error
-* unknown-primary-key-error
-* type-missing-error
-* migration-error
+* <integral-error>
+* <connection-not-established-error>
+* <unknown-primary-key-error>
+* <type-missing-error>
+* <migration-error>
 
 ## Installation
 

@@ -8,8 +8,8 @@
   (:use :cl
         :sxql)
   (:import-from :integral.table
-                :dao-table-class
-                :dao-class
+                :<dao-table-class>
+                :<dao-class>
                 :table-name
                 :table-definition
                 :table-serial-key
@@ -21,11 +21,11 @@
                 :retrieve-sql
                 :execute-sql)
   (:import-from :integral.error
-                :integral-error
-                :connection-not-established-error
-                :unknown-primary-key-error
-                :type-missing-error
-                :migration-error)
+                :<integral-error>
+                :<connection-not-established-error>
+                :<unknown-primary-key-error>
+                :<type-missing-error>
+                :<migration-error>)
   (:import-from :integral.type
                 :serial
                 :tinyint
@@ -57,8 +57,8 @@
   (:export :connect-toplevel
            :disconnect-toplevel
 
-           :dao-class
-           :dao-table-class
+           :<dao-class>
+           :<dao-table-class>
            :table-name
            :table-definition
            :ensure-table-exists
@@ -84,11 +84,11 @@
            :timestamp
 
            ;; Errors
-           :integral-error
-           :connection-not-established-error
-           :unknown-primary-key-error
-           :type-missing-error
-           :migration-error
+           :<integral-error>
+           :<connection-not-established-error>
+           :<unknown-primary-key-error>
+           :<type-missing-error>
+           :<migration-error>
 
            ;; from SxQL
            :where
@@ -100,7 +100,7 @@
 
 (cl-syntax:use-syntax :annot)
 
-(defmethod make-insert-sql ((obj dao-class))
+(defmethod make-insert-sql ((obj <dao-class>))
   (insert-into (intern (table-name obj) :keyword)
     (apply #'set=
            (mapcan
@@ -112,7 +112,7 @@
             (database-column-slot-names (class-of obj))))))
 
 @export
-(defmethod insert-dao ((obj dao-class))
+(defmethod insert-dao ((obj <dao-class>))
   (let ((serial-key (table-serial-key (class-of obj)))
         (sqlite3-p (eq :sqlite3 (database-type))))
     (labels ((get-pk-value ()
@@ -131,10 +131,10 @@
           (setf (slot-value obj serial-key) pk-value)))
       obj)))
 
-(defmethod make-update-sql ((obj dao-class))
+(defmethod make-update-sql ((obj <dao-class>))
   (let ((primary-key (table-primary-key (class-of obj))))
     (unless primary-key
-      (error 'unknown-primary-key-error
+      (error '<unknown-primary-key-error>
              :table-name (table-name obj)))
 
     (update (intern (table-name obj) :keyword)
@@ -153,13 +153,13 @@
                  `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
 
 @export
-(defmethod update-dao ((obj dao-class))
+(defmethod update-dao ((obj <dao-class>))
   (execute-sql (make-update-sql obj)))
 
-(defmethod make-delete-sql ((obj dao-class))
+(defmethod make-delete-sql ((obj <dao-class>))
   (let ((primary-key (table-primary-key (class-of obj))))
     (unless primary-key
-      (error 'unknown-primary-key-error
+      (error '<unknown-primary-key-error>
              :table-name (table-name obj)))
 
     (delete-from (intern (table-name obj) :keyword)
@@ -170,7 +170,7 @@
                  `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
 
 @export
-(defmethod delete-dao ((obj dao-class))
+(defmethod delete-dao ((obj <dao-class>))
   (execute-sql (make-delete-sql obj)))
 
 (defun plist-to-dao (class plist)
@@ -185,7 +185,7 @@
     obj))
 
 @export
-(defmethod select-dao ((class dao-table-class) &rest expressions)
+(defmethod select-dao ((class <dao-table-class>) &rest expressions)
   (let ((select-sql (select :*
                       (from (intern (table-name class) :keyword)))))
 
@@ -201,10 +201,10 @@
 (defmethod select-dao ((class symbol) &rest expressions)
   (apply #'select-dao (find-class class) expressions))
 
-(defmethod make-find-sql ((class dao-table-class) &rest pk-values)
+(defmethod make-find-sql ((class <dao-table-class>) &rest pk-values)
   (let ((primary-key (table-primary-key class)))
     (unless primary-key
-      (error 'unknown-primary-key-error
+      (error '<unknown-primary-key-error>
              :table-name (table-name class)))
 
     (select :*
@@ -218,7 +218,7 @@
       (limit 1))))
 
 @export
-(defmethod find-dao ((class dao-table-class) &rest pk-values)
+(defmethod find-dao ((class <dao-table-class>) &rest pk-values)
   (let ((result (car (retrieve-sql (apply #'make-find-sql class pk-values)))))
     (plist-to-dao class result)))
 
@@ -227,7 +227,7 @@
   (apply #'find-dao (find-class class) pk-values))
 
 @export
-(defmethod create-dao ((class dao-table-class) &rest initargs)
+(defmethod create-dao ((class <dao-table-class>) &rest initargs)
   (let ((obj (apply #'make-instance class initargs)))
     (insert-dao obj)))
 

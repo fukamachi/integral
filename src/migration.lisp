@@ -15,7 +15,7 @@
   (:import-from :integral.table
                 :table-name
                 :database-column-slots
-                :dao-table-class
+                :<dao-table-class>
                 :table-definition
                 :table-class-indices)
   (:import-from :integral.database
@@ -58,7 +58,7 @@
 (defgeneric migrate-table (class)
   (:method ((class symbol))
     (migrate-table (find-class class)))
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (let ((*sql-log-stream* (or *sql-log-stream* t)))
       (dbi:with-transaction (get-connection)
         (dolist (sql (make-migration-sql class :yield nil))
@@ -68,7 +68,7 @@
 (defgeneric make-migration-sql (class &key yield)
   (:method ((class symbol) &key (yield t))
     (make-migration-sql (find-class class) :yield yield))
-  (:method ((class dao-table-class) &key (yield t))
+  (:method ((class <dao-table-class>) &key (yield t))
     (let ((sql-list (arranged-migration-sql class)))
       (if yield
           (mapcar #'yield sql-list)

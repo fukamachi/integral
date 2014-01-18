@@ -34,7 +34,7 @@
            :accessor :tweet-status)
    (user :type (varchar 64)
          :accessor :tweet-user))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (execute-sql "DROP TABLE IF EXISTS tweets")
@@ -50,7 +50,7 @@
    (user :type (varchar 64)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (multiple-value-bind (new modify old)
@@ -74,7 +74,7 @@
    (user :type (varchar 128)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (multiple-value-bind (new modify old)
@@ -96,7 +96,7 @@
    (user :type (varchar 128)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (multiple-value-bind (new modify old)
@@ -121,7 +121,7 @@
    (user :type (varchar 128)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:unique-keys (user created_at)))
 
@@ -141,7 +141,7 @@
    (user :type (varchar 128)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:unique-keys (id user created_at)))
 
@@ -166,7 +166,7 @@
    (user :type (varchar 128)
          :accessor :tweet-user)
    (created_at :type (char 8)))
-  (:metaclass dao-table-class)
+  (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:unique-keys)
   (:keys (user created_at)))

@@ -48,12 +48,12 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defclass dao-class () ()
-  (:documentation "Base class of classes whose metaclass is DAO-TABLE-CLASS. The inheritance will be done implicitly.
+(defclass <dao-class> () ()
+  (:documentation "Base class of classes whose metaclass is <DAO-TABLE-CLASS>. The inheritance will be done implicitly.
 If you want to use another class, specify it as a superclass in the usual way."))
 
 @export
-(defclass dao-table-class (standard-class)
+(defclass <dao-table-class> (standard-class)
   ((primary-key :initarg :primary-key)
    (unique-keys :initarg :unique-keys)
    (keys :type list
@@ -82,24 +82,24 @@ If you want to use another class, specify it as a superclass in the usual way.")
                  (getf slot :primary-key))
                (getf initargs :direct-slots))))
 
-(defmethod make-instance :before ((class dao-table-class) &key &allow-other-keys)
+(defmethod make-instance :before ((class <dao-table-class>) &key &allow-other-keys)
   (unless (and (slot-boundp class '%initialized)
                (initializedp class))
     (initialize-dao-table-class class)))
 
-(defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
+(defmethod initialize-instance :around ((class <dao-table-class>) &rest initargs &key direct-superclasses &allow-other-keys)
   (unless (or (car (getf initargs :generate-slots))
               (not (car (or (getf initargs :auto-pk)
                             '(t))))
               (initargs-contains-primary-key initargs))
     (push *oid-slot-definition* (getf initargs :direct-slots)))
 
-  (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
+  (unless (contains-class-or-subclasses '<dao-class> direct-superclasses)
     (setf (getf initargs :direct-superclasses)
-          (cons (find-class 'dao-class) direct-superclasses)))
+          (cons (find-class '<dao-class>) direct-superclasses)))
   (apply #'call-next-method class initargs))
 
-(defmethod initialize-instance :after ((class dao-table-class) &key)
+(defmethod initialize-instance :after ((class <dao-table-class>) &key)
   (let ((generate-slots (car (slot-value class 'generate-slots))))
     (unless generate-slots
       (setf (initializedp class) t))
@@ -109,7 +109,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))
 
-(defmethod reinitialize-instance :around ((class dao-table-class) &rest initargs)
+(defmethod reinitialize-instance :around ((class <dao-table-class>) &rest initargs)
   (let ((generate-slots (car (getf initargs :generate-slots))))
     (if (or generate-slots
             (not (car (or (getf initargs :auto-pk)
@@ -130,16 +130,16 @@ If you want to use another class, specify it as a superclass in the usual way.")
         (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                  class)))))
 
-(defmethod c2mop:direct-slot-definition-class ((class dao-table-class) &key)
+(defmethod c2mop:direct-slot-definition-class ((class <dao-table-class>) &key)
   'table-column-definition)
 
-(defmethod c2mop:validate-superclass ((class dao-table-class) (super standard-class))
+(defmethod c2mop:validate-superclass ((class <dao-table-class>) (super standard-class))
   t)
 
-(defmethod c2mop:ensure-class-using-class :around ((class dao-table-class) name &rest keys &key direct-superclasses &allow-other-keys)
-  (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
+(defmethod c2mop:ensure-class-using-class :around ((class <dao-table-class>) name &rest keys &key direct-superclasses &allow-other-keys)
+  (unless (contains-class-or-subclasses '<dao-class> direct-superclasses)
     (setf (getf keys :direct-superclasses)
-          (cons (find-class 'dao-class) direct-superclasses)))
+          (cons (find-class '<dao-class>) direct-superclasses)))
   (apply #'call-next-method class name keys))
 
 (defun contains-class-or-subclasses (class target-classes)
@@ -159,11 +159,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric table-name (class)
   (:documentation "Return the table name of `CLASS' as a string.")
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (if (slot-value class 'table-name)
         (string (car (slot-value class 'table-name)))
         (symbol-name-literally (class-name class))))
-  (:method ((obj dao-class))
+  (:method ((obj <dao-class>))
     (table-name (class-of obj)))
   (:method ((class symbol))
     (table-name (find-class class))))
@@ -171,7 +171,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric table-primary-key (class)
   (:documentation "Return the primary key as a list.")
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (if (slot-boundp class 'primary-key)
         (ensure-list (car (slot-value class 'primary-key)))
         (let ((slot (find-if
@@ -184,7 +184,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric table-serial-key (class)
   (:documentation "Return the serial key as a symbol or NIL if there's no serial keys.")
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (let* ((primary-key (table-primary-key class))
            (slot (find-if
                   #'(lambda (slot)
@@ -200,7 +200,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defgeneric table-definition (class &key yield if-not-exists)
   (:method ((class symbol) &key (yield t) if-not-exists)
     (table-definition (find-class class) :yield yield :if-not-exists if-not-exists))
-  (:method ((class dao-table-class) &key (yield t) if-not-exists)
+  (:method ((class <dao-table-class>) &key (yield t) if-not-exists)
     (with-quote-char
       (let* ((sqlite3-p (eq :sqlite3 (database-type)))
              (query (apply #'sxql:make-statement
@@ -261,13 +261,13 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric database-column-slots (class)
   (:documentation "Same as C2MOP:CLASS-DIRECT-SLOTS except to remove ghost columns.")
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (remove-if #'ghost-slot-p
                (c2mop:class-direct-slots class))))
 
 @export
 (defgeneric database-column-slot-names (class)
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (mapcar #'c2mop:slot-definition-name
             (database-column-slots class))))
 
@@ -275,7 +275,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defgeneric ensure-table-exists (class)
   (:method ((class symbol))
     (ensure-table-exists (find-class class)))
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (let ((*sql-log-stream* (or *sql-log-stream* t)))
       (execute-sql (table-definition class
                                      :yield nil
@@ -285,13 +285,13 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defgeneric recreate-table (class)
   (:method ((class symbol))
     (recreate-table (find-class class)))
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (let ((*sql-log-stream* (or *sql-log-stream* t)))
       (execute-sql (drop-table (intern (table-name class) :keyword)))
       (ensure-table-exists class))))
 
 (defgeneric initialize-dao-table-class (class)
-  (:method ((class dao-table-class))
+  (:method ((class <dao-table-class>))
     (when (initializedp class)
       (return-from initialize-dao-table-class))
 

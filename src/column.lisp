@@ -13,7 +13,7 @@
                 :cltype-to-dbtype
                 :serial)
   (:import-from :integral.error
-                :type-missing-error)
+                :<type-missing-error>)
   (:import-from :closer-mop
                 :standard-direct-slot-definition
                 :standard-slot-definition
@@ -74,7 +74,7 @@
         column
       (let ((col-type (table-column-type column)))
         (when (eq col-type t)
-          (error 'type-missing-error
+          (error '<type-missing-error>
                  :slot-name (c2mop:slot-definition-name column)))
 
         `(,(table-column-name column)
