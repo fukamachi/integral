@@ -83,8 +83,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (initialize-dao-table-class class)))
 
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
-  (unless (and (car (getf initargs :generate-slots))
-               (initargs-contains-primary-key initargs))
+  (unless (or (car (getf initargs :generate-slots))
+              (initargs-contains-primary-key initargs))
     (push *oid-slot-definition* (getf initargs :direct-slots)))
 
   (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
