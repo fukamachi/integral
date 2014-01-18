@@ -82,7 +82,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (initialize-dao-table-class class)))
 
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
-  (unless (initargs-contains-primary-key initargs)
+  (unless (and (not (car (getf initargs :generate-slots)))
+               (initargs-contains-primary-key initargs))
     (push *oid-slot-definition* (getf initargs :direct-slots)))
 
   (unless (contains-class-or-subclasses 'dao-class direct-superclasses)
@@ -100,15 +101,16 @@ If you want to use another class, specify it as a superclass in the usual way.")
                class))))
 
 (defmethod reinitialize-instance :around ((class dao-table-class) &rest initargs)
-  (if (initargs-contains-primary-key initargs)
-      (setf (getf initargs :direct-slots)
-            (remove '%oid (getf initargs :direct-slots)
-                    :key #'car
-                    :test #'eq))
-      (push *oid-slot-definition* (getf initargs :direct-slots)))
-  (prog1
-      (apply #'call-next-method class initargs)
-    (let ((generate-slots (car (slot-value class 'generate-slots))))
+  (let ((generate-slots (car (slot-value class 'generate-slots))))
+    (if (or generate-slots
+            (initargs-contains-primary-key initargs))
+        (setf (getf initargs :direct-slots)
+              (remove '%oid (getf initargs :direct-slots)
+                      :key #'car
+                      :test #'eq))
+        (push *oid-slot-definition* (getf initargs :direct-slots)))
+    (prog1
+        (apply #'call-next-method class initargs)
       (when generate-slots
         (setf (initializedp class) nil))
       (when (and *auto-migration-mode*
