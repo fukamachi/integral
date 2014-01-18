@@ -8,6 +8,7 @@
   (:use :cl)
   (:import-from :integral.connection
                 :get-connection
+                :connected-p
                 :database-type
                 :with-quote-char
                 :retrieve-table-column-definitions-by-name)
@@ -96,7 +97,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (unless generate-slots
       (setf (initializedp class) t))
     (when (and *auto-migration-mode*
-               (not generate-slots))
+               (not generate-slots)
+               (connected-p))
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))
 
@@ -114,7 +116,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (when generate-slots
         (setf (initializedp class) nil))
       (when (and *auto-migration-mode*
-                 (not generate-slots))
+                 (not generate-slots)
+                 (connected-p))
         (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                  class)))))
 
