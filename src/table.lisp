@@ -62,6 +62,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
    (generate-slots :type (proper-list 'boolean)
                    :initarg :generate-slots
                    :initform nil)
+   (auto-pk :type (proper-list 'boolean)
+            :initarg :auto-pk
+            :initform '(t))
    (%initialized :type (proper-list 'boolean)
                  :initform nil
                  :accessor initializedp))
@@ -84,6 +87,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
 
 (defmethod initialize-instance :around ((class dao-table-class) &rest initargs &key direct-superclasses &allow-other-keys)
   (unless (or (car (getf initargs :generate-slots))
+              (not (car (or (getf initargs :auto-pk)
+                            '(t))))
               (initargs-contains-primary-key initargs))
     (push *oid-slot-definition* (getf initargs :direct-slots)))
 
@@ -105,6 +110,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defmethod reinitialize-instance :around ((class dao-table-class) &rest initargs)
   (let ((generate-slots (car (getf initargs :generate-slots))))
     (if (or generate-slots
+            (not (car (or (getf initargs :auto-pk)
+                          '(t))))
             (initargs-contains-primary-key initargs))
         (setf (getf initargs :direct-slots)
               (remove '%oid (getf initargs :direct-slots)
