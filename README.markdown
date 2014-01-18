@@ -81,9 +81,9 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 
 `:generate-slots` option means slot definitions follow database schema. Note you must establish a database connection before the first `allocate-instance`.
 
-### Auto-migrating mode
+### Auto-migration mode
 
-If `integral:*auto-migrating-mode*` is set `T`, all class changes will be applied to database tables automatically.
+If `integral:*auto-migration-mode*` is set `T`, all class changes will be applied to database tables automatically.
 
 ## Symbols
 
@@ -99,7 +99,7 @@ If `integral:*auto-migrating-mode*` is set `T`, all class changes will be applie
 * table-name (class)
 * table-definition (class &key (yield t))
 * migrate-table (class)
-* \*auto-migrating-mode\*
+* \*auto-migration-mode\*
 
 ### SQL
 

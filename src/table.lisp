@@ -20,7 +20,7 @@
                 :column-info-for-create-table
                 :slot-definition-to-plist)
   (:import-from :integral.variable
-                :*auto-migrating-mode*)
+                :*auto-migration-mode*)
   (:import-from :integral.util
                 :symbol-name-literally
                 :class-inherit-p)
@@ -79,7 +79,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (let ((generate-slots (car (slot-value class 'generate-slots))))
     (unless generate-slots
       (setf (initializedp class) t))
-    (when (and *auto-migrating-mode*
+    (when (and *auto-migration-mode*
                (not generate-slots))
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))
@@ -88,7 +88,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (let ((generate-slots (car (slot-value class 'generate-slots))))
     (when generate-slots
       (setf (initializedp class) nil))
-    (when (and *auto-migrating-mode*
+    (when (and *auto-migration-mode*
                (not generate-slots))
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))

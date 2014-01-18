@@ -11,5 +11,5 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defvar *auto-migrating-mode* nil
-  "Whether use auto-migrating mode or not.")
+(defvar *auto-migration-mode* nil
+  "Whether use auto-migration mode or not.")

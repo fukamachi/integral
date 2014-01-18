@@ -47,7 +47,7 @@
   (:import-from :integral.migration
                 :migrate-table)
   (:import-from :integral.variable
-                :*auto-migrating-mode*)
+                :*auto-migration-mode*)
   (:import-from :integral.util
                 :symbol-name-literally)
   (:import-from :alexandria
@@ -63,7 +63,7 @@
            :retrieve-sql
            :execute-sql
 
-           :*auto-migrating-mode*
+           :*auto-migration-mode*
            :migrate-table
 
            ;; DataTypes
