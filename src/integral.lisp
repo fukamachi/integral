@@ -15,7 +15,8 @@
                 :table-serial-key
                 :table-primary-key
                 :database-column-slot-names
-                :ensure-table-exists)
+                :ensure-table-exists
+                :recreate-table)
   (:import-from :integral.database
                 :retrieve-sql
                 :execute-sql)

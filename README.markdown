@@ -100,6 +100,7 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * table-definition (class &key (yield t) if-not-exists)
 * migrate-table (class)
 * ensure-table-exists (class)
+* recreate-table (class)
 * \*auto-migration-mode\*
 
 ### SQL
