@@ -76,7 +76,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
                  (getf slot :primary-key))
                (getf initargs :direct-slots))))
 
-(defmethod allocate-instance :before ((class dao-table-class) &key)
+(defmethod make-instance :before ((class dao-table-class) &key &allow-other-keys)
   (unless (and (slot-boundp class '%initialized)
                (initializedp class))
     (initialize-dao-table-class class)))
