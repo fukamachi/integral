@@ -17,7 +17,7 @@
                 :table-definition))
 (in-package :integral-test.migration.mysql)
 
-(plan 23)
+(plan 25)
 
 (disconnect-toplevel)
 
@@ -59,8 +59,8 @@
   (is modify nil)
   (is (mapcar #'car old) '("status")))
 
-(is (sxql:yield (car (make-migration-sql (find-class 'tweet))))
-    "ALTER TABLE tweets ADD COLUMN created_at CHAR(8)")
+(is (car (make-migration-sql (find-class 'tweet)))
+    "ALTER TABLE tweets DROP COLUMN status")
 
 (migrate-table (find-class 'tweet))
 
@@ -111,7 +111,7 @@
     '(nil nil nil))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    nil)
+    '(nil nil nil))
 
 (defclass tweet ()
   ((id :type bigint
@@ -125,13 +125,13 @@
   (:table-name "tweets")
   (:unique-keys (user created_at)))
 
-(is (sxql:yield (car (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))))
+(is (sxql:yield (caar (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))))
     "CREATE UNIQUE INDEX user_and_created_at ON tweets (user, created_at)")
 
 (migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    NIL)
+    '(nil nil nil))
 
 (defclass tweet ()
   ((id :type bigint
@@ -145,17 +145,18 @@
   (:table-name "tweets")
   (:unique-keys (id user created_at)))
 
-(destructuring-bind (sql1 sql2)
+(destructuring-bind (add-index drop-primary-key drop-index)
     (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-  (is (sxql:yield sql1)
+  (is (sxql:yield (car drop-index))
       "DROP INDEX user_and_created_at ON tweets")
-  (is (sxql:yield sql2)
+  (is drop-primary-key nil)
+  (is (sxql:yield (car add-index))
       "CREATE UNIQUE INDEX id_and_user_and_created_at ON tweets (id, user, created_at)"))
 
 (migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    NIL)
+    '(nil nil nil))
 
 (defclass tweet ()
   ((id :type bigint
@@ -170,16 +171,17 @@
   (:unique-keys)
   (:keys (user created_at)))
 
-(destructuring-bind (sql1 sql2)
+(destructuring-bind (add-index drop-primary-key drop-index)
     (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-  (is (sxql:yield sql1)
+  (is (sxql:yield (car drop-index))
       "DROP INDEX id_and_user_and_created_at ON tweets")
-  (is (sxql:yield sql2)
+  (is drop-primary-key nil)
+  (is (sxql:yield (car add-index))
       "CREATE INDEX user_and_created_at ON tweets (user, created_at)"))
 
 (migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    NIL)
+    '(nil nil nil))
 
 (finalize)
