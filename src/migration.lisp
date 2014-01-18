@@ -184,41 +184,55 @@
                               (table-name class)))
          (db-primary-key (car (find-if (lambda (column)
                                          (getf (cdr column) :primary-key))
-                                       column-definitions))))
-    (multiple-value-bind (new-columns modify-columns old-columns)
-        (compute-migrate-table-columns class)
-      (list
-       (if new-columns
-           (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                  (mapcar (lambda (column)
-                            (rplaca column (intern (car column) :keyword))
-                            (apply #'add-column column))
-                          new-columns))
-           nil)
-       (if modify-columns
-           (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                  (mapcan (lambda (column)
-                            (rplaca column (intern (car column) :keyword))
-                            (cond
-                              ((eq (database-type) :postgres)
-                               (list
-                                (alter-column (car column) :type (getf (cdr column) :type))
-                                (alter-column (car column) :not-null (getf (cdr column) :not-null))))
-                              ;; Remove :primary-key if the column already has PRIMARY KEY.
-                              ((and (getf (cdr column) :primary-key)
-                                    (string= db-primary-key (car column)))
-                               (list
-                                (apply #'modify-column
-                                       (car column)
-                                       (remove-from-plist (cdr column) :primary-key))))
-                              (T (list (apply #'modify-column column)))))
-                          modify-columns))
-           nil)
-       (if old-columns
-           (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                  (mapcar (lambda (column)
-                            (drop-column (intern (car column) :keyword))) old-columns))
-           nil)))))
+                                       column-definitions)))
+         (slots (database-column-slots class)))
+    (flet ((slot-column-position-arg (name)
+             (let ((pos (position name slots
+                                  :key (lambda (slot)
+                                         (symbol-name-literally (table-column-name slot)))
+                                  :test #'string=)))
+               (cond
+                 ((= pos 0) '(:first t))
+                 ((null pos) nil)
+                 (T (list :after
+                          (intern (symbol-name-literally (table-column-name (nth (1- pos) slots)))
+                                  :keyword)))))))
+      (multiple-value-bind (new-columns modify-columns old-columns)
+          (compute-migrate-table-columns class)
+        (list
+         (if new-columns
+             (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                    (mapcar (lambda (column)
+                              (rplaca column (intern (car column) :keyword))
+                              (apply #'add-column
+                                     (append column
+                                             (slot-column-position-arg (car column)))))
+                            new-columns))
+             nil)
+         (if modify-columns
+             (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                    (mapcan (lambda (column)
+                              (rplaca column (intern (car column) :keyword))
+                              (cond
+                                ((eq (database-type) :postgres)
+                                 (list
+                                  (alter-column (car column) :type (getf (cdr column) :type))
+                                  (alter-column (car column) :not-null (getf (cdr column) :not-null))))
+                                ;; Remove :primary-key if the column already has PRIMARY KEY.
+                                ((and (getf (cdr column) :primary-key)
+                                      (string= db-primary-key (car column)))
+                                 (list
+                                  (apply #'modify-column
+                                         (car column)
+                                         (remove-from-plist (cdr column) :primary-key))))
+                                (T (list (apply #'modify-column column)))))
+                            modify-columns))
+             nil)
+         (if old-columns
+             (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                    (mapcar (lambda (column)
+                              (drop-column (intern (car column) :keyword))) old-columns))
+             nil))))))
 
 (defun %generate-migration-sql-for-sqlite3 (class)
   (let ((column-definitions (retrieve-table-column-definitions-by-name
