@@ -21,6 +21,7 @@
                 :column-info-for-create-table
                 :slot-definition-to-plist)
   (:import-from :integral.database
+                :*sql-log-stream*
                 :execute-sql)
   (:import-from :integral.variable
                 :*auto-migration-mode*)
@@ -275,17 +276,19 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:method ((class symbol))
     (ensure-table-exists (find-class class)))
   (:method ((class dao-table-class))
-    (execute-sql (table-definition class
-                                   :yield nil
-                                   :if-not-exists t))))
+    (let ((*sql-log-stream* (or *sql-log-stream* t)))
+      (execute-sql (table-definition class
+                                     :yield nil
+                                     :if-not-exists t)))))
 
 @export
 (defgeneric recreate-table (class)
   (:method ((class symbol))
     (recreate-table (find-class class)))
   (:method ((class dao-table-class))
-    (execute-sql (drop-table (intern (table-name class) :keyword)))
-    (ensure-table-exists class)))
+    (let ((*sql-log-stream* (or *sql-log-stream* t)))
+      (execute-sql (drop-table (intern (table-name class) :keyword)))
+      (ensure-table-exists class))))
 
 (defgeneric initialize-dao-table-class (class)
   (:method ((class dao-table-class))
