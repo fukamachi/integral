@@ -27,8 +27,8 @@
   (ok (every
        #'equal
        (table-indices db "tweets")
-       '((:unique-key t :primary-key nil :columns ("id" "user"))
-         (:unique-key t :primary-key t :columns ("id")))))
+       '(("tweets_id_user_key" :unique-key t :primary-key nil :columns ("id" "user"))
+         ("tweets_pkey" :unique-key t :primary-key t :columns ("id")))))
 
   (dbi:do-sql db "DROP TABLE IF EXISTS users")
   (dbi:do-sql db "CREATE TABLE users (id SERIAL PRIMARY KEY, first_name VARCHAR(64) NOT NULL, family_name VARCHAR(64) NOT NULL, UNIQUE(first_name, family_name))")
@@ -36,7 +36,7 @@
   (ok (every
        #'equal
        (table-indices db "users")
-       '((:unique-key t :primary-key nil :columns ("family_name" "first_name"))
-         (:unique-key t :primary-key t :columns ("id"))))))
+       '(("users_first_name_family_name_key" :unique-key t :primary-key nil :columns ("first_name" "family_name"))
+         ("users_pkey" :unique-key t :primary-key t :columns ("id"))))))
 
 (finalize)

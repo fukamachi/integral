@@ -30,8 +30,8 @@
   (ok (every
        #'equal
        (table-indices db "tweets")
-       '((:unique-key t :primary-key t :columns ("id"))
-         (:unique-key t :primary-key nil :columns ("id" "user")))))
+       '(("sqlite_autoindex_tweets_2" :unique-key t :primary-key nil :columns ("id" "user"))
+         ("sqlite_autoindex_tweets_1" :unique-key t :primary-key t :columns ("id")))))
 
   (dbi:do-sql db "CREATE TABLE users (id INTEGER PRIMARY KEY, first_name VARCHAR(64) NOT NULL, family_name VARCHAR(64) NOT NULL, UNIQUE(first_name, family_name))")
 
@@ -40,7 +40,7 @@
   (ok (every
        #'equal
        (table-indices db "users")
-       '((:unique-key t :primary-key t :columns ("id"))
-         (:unique-key t :primary-key nil :columns ("first_name" "family_name"))))))
+       '(("sqlite_autoindex_users_1" :unique-key t :primary-key nil :columns ("first_name" "family_name"))
+         ("PRIMARY" :unique-key t :primary-key t :columns ("id"))))))
 
 (finalize)

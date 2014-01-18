@@ -11,7 +11,7 @@
         :integral.type))
 (in-package :integral-test.type)
 
-(plan 12)
+(plan 13)
 
 (is (cltype-to-dbtype 'integer)
     :integer)
