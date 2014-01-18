@@ -199,6 +199,7 @@
                                   :keyword)))))))
       (multiple-value-bind (new-columns modify-columns old-columns)
           (compute-migrate-table-columns class)
+        ;; TODO: Return DROP TABLE and CREATE TABLE queries if all columns will be dropped.
         (list
          (if new-columns
              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
