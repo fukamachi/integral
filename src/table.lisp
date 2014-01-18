@@ -53,6 +53,18 @@
 If you want to use another class, specify it as a superclass in the usual way."))
 
 @export
+(defgeneric inflate (object slot-name value)
+  (:method ((object <dao-class>) slot-name value)
+    (declare (ignore object slot-name))
+    value))
+
+@export
+(defgeneric deflate (object slot-name value)
+  (:method ((object <dao-class>) slot-name value)
+    (declare (ignore object slot-name))
+    value))
+
+@export
 (defclass <dao-table-class> (standard-class)
   ((primary-key :initarg :primary-key)
    (unique-keys :initarg :unique-keys)

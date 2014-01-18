@@ -85,6 +85,33 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 
 If `integral:*auto-migration-mode*` is set `T`, all class changes will be applied to database tables automatically.
 
+### inflate/deflate
+
+```common-lisp
+(defclass user ()
+  ((name :type string
+         :initarg :name)
+   (created_at :type timestamp
+               :initarg :created_at))
+  (:metaclass integral:<dao-table-class>))
+;=> #<INTEGRAL.TABLE:<DAO-TABLE-CLASS> USER>
+
+(find-dao 'user 1)
+;=> #<USER #x302001D9452D>
+
+(slot-value * 'created_at)
+;=> 3599088727
+
+;; Define inflate/deflate methods
+(defmethod integral:inflate ((object user) (slot-name (eql 'created_at)) value)
+  (local-time:universal-to-timestamp value))
+(defmethod integral:deflate ((object user) (slot-name (eql 'created_at)) value)
+  (local-time:format-timestamp nil value))
+
+(slot-value (find-dao 'user 1) 'created_at)
+;=> @2014-01-19T11:52:07.000000+09:00
+```
+
 ## Symbols
 
 ### Connections
@@ -98,6 +125,8 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * <dao-table-class>
 * table-name (class)
 * table-definition (class &key (yield t) if-not-exists)
+* inflate (object slot-name value)
+* deflate (object slot-name value)
 * migrate-table (class)
 * ensure-table-exists (class)
 * recreate-table (class)

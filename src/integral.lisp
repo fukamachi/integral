@@ -16,7 +16,9 @@
                 :table-primary-key
                 :database-column-slot-names
                 :ensure-table-exists
-                :recreate-table)
+                :recreate-table
+                :inflate
+                :deflate)
   (:import-from :integral.database
                 :retrieve-sql
                 :execute-sql)
@@ -59,9 +61,13 @@
 
            :<dao-class>
            :<dao-table-class>
+
+           :inflate
+           :deflate
            :table-name
            :table-definition
            :ensure-table-exists
+           :recreate-table
 
            :retrieve-sql
            :execute-sql
@@ -107,7 +113,8 @@
             #'(lambda (slot-name)
                 (if (slot-boundp obj slot-name)
                     (list (intern (symbol-name slot-name) :keyword)
-                          (slot-value obj slot-name))
+                          (deflate obj slot-name
+                            (slot-value obj slot-name)))
                     nil))
             (database-column-slot-names (class-of obj))))))
 
@@ -143,7 +150,8 @@
               #'(lambda (slot-name)
                   (if (slot-boundp obj slot-name)
                       (list (intern (symbol-name slot-name) :keyword)
-                            (slot-value obj slot-name))
+                            (deflate obj slot-name
+                              (slot-value obj slot-name)))
                       nil))
               (database-column-slot-names (class-of obj))))
       (where (if (cdr primary-key)
@@ -181,7 +189,8 @@
           for val = (getf plist (intern (symbol-name-literally column-name) :keyword)
                           undef)
           unless (eq val undef)
-            do (setf (slot-value obj column-name) val))
+            do (setf (slot-value obj column-name)
+                     (inflate obj column-name val)))
     obj))
 
 @export
