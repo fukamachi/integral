@@ -42,19 +42,19 @@
   (let ((tweet (make-instance 'tweet
                               :status "This is the first tweet. Yay."
                               :user "nitro_idiot")))
-    (is (make-insert-sql tweet)
+    (is (sxql:yield (make-insert-sql tweet))
         "INSERT INTO `tweets` (`status`, `user`) VALUES ('This is the first tweet. Yay.', 'nitro_idiot')")
 
     ;; for testing
     (setf (slot-value tweet 'id) 1)
 
-    (is (make-update-sql tweet)
+    (is (sxql:yield (make-update-sql tweet))
         "UPDATE `tweets` SET `id` = 1, `status` = 'This is the first tweet. Yay.', `user` = 'nitro_idiot' WHERE (`id` = 1)")
 
-    (is (make-delete-sql tweet)
+    (is (sxql:yield (make-delete-sql tweet))
         "DELETE FROM `tweets` WHERE (`id` = 1)")
 
-    (is (make-find-sql (find-class 'tweet) 1)
+    (is (sxql:yield (make-find-sql (find-class 'tweet) 1))
         "SELECT * FROM `tweets` WHERE (`id` = 1) LIMIT 1")))
 
 (connect-to-testdb)

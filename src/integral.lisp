@@ -15,6 +15,9 @@
                 :table-serial-key
                 :table-primary-key
                 :database-column-slot-names)
+  (:import-from :integral.database
+                :retrieve-sql
+                :execute-sql)
   (:import-from :integral.error
                 :integral-error
                 :connection-not-established-error
@@ -47,13 +50,6 @@
                 :*auto-migrating-mode*)
   (:import-from :integral.util
                 :symbol-name-literally)
-  (:import-from :dbi
-                :prepare
-                :execute
-                :fetch
-                :do-sql)
-  (:import-from :sxql.sql-type
-                :sql-statement)
   (:import-from :alexandria
                 :when-let)
   (:export :connect-toplevel
@@ -63,6 +59,9 @@
            :dao-table-class
            :table-name
            :table-definition
+
+           :retrieve-sql
+           :execute-sql
 
            :*auto-migrating-mode*
            :migrate-table
@@ -80,8 +79,6 @@
            :datetime
            :date
            :timestamp
-
-           :define-column-type
 
            ;; Errors
            :integral-error
@@ -101,17 +98,15 @@
 (cl-syntax:use-syntax :annot)
 
 (defmethod make-insert-sql ((obj dao-class))
-  (with-quote-char
-    (yield
-     (insert-into (intern (table-name obj) :keyword)
-       (apply #'set=
-              (mapcan
-               #'(lambda (slot-name)
-                   (if (slot-boundp obj slot-name)
-                       (list (intern (symbol-name slot-name) :keyword)
-                             (slot-value obj slot-name))
-                       nil))
-               (database-column-slot-names (class-of obj))))))))
+  (insert-into (intern (table-name obj) :keyword)
+    (apply #'set=
+           (mapcan
+            #'(lambda (slot-name)
+                (if (slot-boundp obj slot-name)
+                    (list (intern (symbol-name slot-name) :keyword)
+                          (slot-value obj slot-name))
+                    nil))
+            (database-column-slot-names (class-of obj))))))
 
 @export
 (defmethod insert-dao ((obj dao-class))
@@ -127,10 +122,7 @@
         (let ((pk-value (get-pk-value)))
           (when (integerp pk-value)
             (setf (slot-value obj serial-key) (1+ pk-value)))))
-      (multiple-value-bind (sql bind) (make-insert-sql obj)
-        (apply #'dbi:do-sql
-               (get-connection)
-               sql bind))
+      (execute-sql (make-insert-sql obj))
       (unless sqlite3-p
         (when-let (pk-value (get-pk-value))
           (setf (slot-value obj serial-key) pk-value)))
@@ -142,28 +134,24 @@
       (error 'unknown-primary-key-error
              :table-name (table-name obj)))
 
-    (with-quote-char
-      (yield (update (intern (table-name obj) :keyword)
-               (apply #'set=
-                      (mapcan
-                       #'(lambda (slot-name)
-                           (if (slot-boundp obj slot-name)
-                               (list (intern (symbol-name slot-name) :keyword)
-                                     (slot-value obj slot-name))
-                               nil))
-                       (database-column-slot-names (class-of obj))))
-               (where (if (cdr primary-key)
-                          `(:and ,@(mapcar #'(lambda (key)
-                                               `(:= ,key ,(slot-value obj key)))
-                                           primary-key))
-                          `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))))
+    (update (intern (table-name obj) :keyword)
+      (apply #'set=
+             (mapcan
+              #'(lambda (slot-name)
+                  (if (slot-boundp obj slot-name)
+                      (list (intern (symbol-name slot-name) :keyword)
+                            (slot-value obj slot-name))
+                      nil))
+              (database-column-slot-names (class-of obj))))
+      (where (if (cdr primary-key)
+                 `(:and ,@(mapcar #'(lambda (key)
+                                      `(:= ,key ,(slot-value obj key)))
+                                  primary-key))
+                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
 
 @export
 (defmethod update-dao ((obj dao-class))
-  (multiple-value-bind (sql bind) (make-update-sql obj)
-    (apply #'dbi:do-sql
-           (get-connection)
-           sql bind)))
+  (execute-sql (make-update-sql obj)))
 
 (defmethod make-delete-sql ((obj dao-class))
   (let ((primary-key (table-primary-key (class-of obj))))
@@ -171,20 +159,16 @@
       (error 'unknown-primary-key-error
              :table-name (table-name obj)))
 
-    (with-quote-char
-      (yield (delete-from (intern (table-name obj) :keyword)
-               (where (if (cdr primary-key)
-                          `(:and ,@(mapcar #'(lambda (key)
-                                               `(:= ,key ,(slot-value obj key)))
-                                           primary-key))
-                          `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))))
+    (delete-from (intern (table-name obj) :keyword)
+      (where (if (cdr primary-key)
+                 `(:and ,@(mapcar #'(lambda (key)
+                                      `(:= ,key ,(slot-value obj key)))
+                                  primary-key))
+                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
 
 @export
 (defmethod delete-dao ((obj dao-class))
-  (multiple-value-bind (sql bind) (make-delete-sql obj)
-    (apply #'dbi:do-sql
-           (get-connection)
-           sql bind)))
+  (execute-sql (make-delete-sql obj)))
 
 (defun plist-to-dao (class plist)
   (let ((obj (make-instance class)))
@@ -205,14 +189,10 @@
     (dolist (ex expressions)
       (add-child select-sql ex))
 
-    (multiple-value-bind (sql bind)
-        (with-quote-char (yield select-sql))
-
-      (let* ((query (dbi:prepare (get-connection) sql))
-             (result (apply #'dbi:execute query bind)))
-        (mapcar #'(lambda (plist)
-                    (plist-to-dao class plist))
-                (dbi:fetch-all result))))))
+    (let ((result (retrieve-sql select-sql)))
+      (mapcar #'(lambda (plist)
+                  (plist-to-dao class plist))
+              result))))
 
 @export
 (defmethod select-dao ((class symbol) &rest expressions)
@@ -224,25 +204,20 @@
       (error 'unknown-primary-key-error
              :table-name (table-name class)))
 
-    (with-quote-char
-      (yield
-       (select :*
-         (from (intern (table-name class) :keyword))
-         (where (if (cdr primary-key)
-                    `(:and ,@(mapcar #'(lambda (key val)
-                                         `(:= ,key ,val))
-                                     primary-key
-                                     pk-values))
-                    `(:= ,(car primary-key) ,(car pk-values))))
-         (limit 1))))))
+    (select :*
+      (from (intern (table-name class) :keyword))
+      (where (if (cdr primary-key)
+                 `(:and ,@(mapcar #'(lambda (key val)
+                                      `(:= ,key ,val))
+                                  primary-key
+                                  pk-values))
+                 `(:= ,(car primary-key) ,(car pk-values))))
+      (limit 1))))
 
 @export
 (defmethod find-dao ((class dao-table-class) &rest pk-values)
-  (multiple-value-bind (sql bind)
-      (apply #'make-find-sql class pk-values)
-    (let* ((query (dbi:prepare (get-connection) sql))
-           (result (apply #'dbi:execute query bind)))
-      (plist-to-dao class (dbi:fetch result)))))
+  (let ((result (car (retrieve-sql (apply #'make-find-sql class pk-values)))))
+    (plist-to-dao class result)))
 
 @export
 (defmethod find-dao ((class symbol) &rest pk-values)
@@ -256,11 +231,3 @@
 @export
 (defmethod create-dao ((class symbol) &rest initargs)
   (apply #'create-dao (find-class class) initargs))
-
-@export
-(defmethod execute-sql ((sql string) &rest bind)
-  (apply #'dbi:do-sql (get-connection) sql bind))
-
-@export
-(defmethod execute-sql ((sql sql-statement) &rest bind)
-  (apply #'dbi:do-sql (get-connection) sql bind))

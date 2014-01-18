@@ -18,6 +18,8 @@
                 :dao-table-class
                 :table-definition
                 :table-class-indices)
+  (:import-from :integral.database
+                :execute-sql)
   (:import-from :integral.column
                 :table-column-name
                 :column-info-for-create-table)
@@ -27,8 +29,7 @@
                 :list-diff
                 :symbol-name-literally)
   (:import-from :dbi
-                :with-transaction
-                :do-sql)
+                :with-transaction)
   (:import-from :sxql
                 :make-statement
                 :insert-into
@@ -62,13 +63,9 @@
           (sql-list (generate-migration-sql class)))
       (dbi:with-transaction (get-connection)
         (dolist (sql sql-list)
-          (multiple-value-bind (sql bind)
-              (with-quote-char (yield sql))
-            (apply #'dbi:do-sql (get-connection) sql bind)))
+          (execute-sql sql))
         (dolist (sql sql-list-for-indices)
-          (multiple-value-bind (sql bind)
-              (with-quote-char (yield sql))
-            (apply #'dbi:do-sql (get-connection) sql bind)))))))
+          (execute-sql sql))))))
 
 (defun compute-migrate-table-columns (class)
   (let ((column-definitions (retrieve-table-column-definitions-by-name
