@@ -45,7 +45,8 @@
                 :database-type
                 :with-quote-char)
   (:import-from :integral.migration
-                :migrate-table)
+                :migrate-table
+                :make-migration-sql)
   (:import-from :integral.variable
                 :*auto-migration-mode*)
   (:import-from :integral.util
@@ -65,6 +66,7 @@
 
            :*auto-migration-mode*
            :migrate-table
+           :make-migration-sql
 
            ;; DataTypes
            :serial
