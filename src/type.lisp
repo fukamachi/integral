@@ -53,15 +53,15 @@
   'string)
 
 @export
-(deftype datetime () 'string)
+(deftype datetime () 'integer)
 
 @export
-(deftype date () 'string)
+(deftype date () 'integer)
 
 @export
 (deftype timestamp (&optional length)
   (declare (ignore length))
-  'string)
+  'integer)
 
 (defvar *type-alias-map* (make-hash-table :test 'eq))
 
