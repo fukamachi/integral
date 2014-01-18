@@ -1,6 +1,6 @@
 # Integral
 
-Integral is an object relational mapper for Common Lisp based on [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
+Integral is an object relational mapper for Common Lisp based on [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
 <span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
 
@@ -121,8 +121,8 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### Classes
 
-* <dao-class>
-* <dao-table-class>
+* &lt;dao-class&gt;
+* &lt;dao-table-class&gt;
 * table-name (class)
 * table-definition (class &key (yield t) if-not-exists)
 * inflate (object slot-name value)
@@ -134,11 +134,11 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### SQL
 
-* select-dao ((class <dao-table-class>) &rest expressions)
-* insert-dao ((obj <dao-class>))
-* create-dao ((class <dao-table-class>) &rest initargs)
-* update-dao ((obj <dao-class>))
-* delete-dao ((obj <dao-class>))
+* select-dao ((class &lt;dao-table-class&gt;) &rest expressions)
+* insert-dao ((obj &lt;dao-class&gt;))
+* create-dao ((class &lt;dao-table-class&gt;) &rest initargs)
+* update-dao ((obj &lt;dao-class&gt;))
+* delete-dao ((obj &lt;dao-class&gt;))
 * execute-sql ((sql string) &rest bind)
 * where
 * order-by
@@ -162,15 +162,15 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 ### Errors
 
-* <integral-error>
-* <connection-not-established-error>
-* <unknown-primary-key-error>
-* <type-missing-error>
-* <migration-error>
+* &lt;integral-error&gt;
+* &lt;connection-not-established-error&gt;
+* &lt;unknown-primary-key-error&gt;
+* &lt;type-missing-error&gt;
+* &lt;migration-error&gt;
 
 ## Installation
 
-As Integral depends on the latest [CL-DBL](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql), you have to download them before installation.
+As Integral depends on the latest [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql), you have to download them before installation.
 
 ```
 $ cd ~/quicklisp/local-projects
