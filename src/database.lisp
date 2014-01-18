@@ -23,6 +23,9 @@
 (cl-syntax:use-syntax :annot)
 
 @export
+(defvar *sql-log-stream* t)
+
+@export
 (defmethod retrieve-sql ((sql string) &rest bind)
   (dbi:fetch-all
    (apply #'dbi:execute (dbi:prepare (get-connection) sql)
@@ -37,6 +40,7 @@
 
 @export
 (defmethod execute-sql ((sql string) &rest bind)
+  (format *sql-log-stream* "~&~A;~%" sql)
   (apply #'dbi:do-sql (get-connection) sql bind))
 
 @export
