@@ -19,6 +19,7 @@
                 :table-definition
                 :table-class-indices)
   (:import-from :integral.database
+                :*sql-log-stream*
                 :execute-sql)
   (:import-from :integral.column
                 :table-column-name
@@ -58,9 +59,10 @@
   (:method ((class symbol))
     (migrate-table (find-class class)))
   (:method ((class dao-table-class))
-    (dbi:with-transaction (get-connection)
-      (dolist (sql (make-migration-sql class :yield nil))
-        (execute-sql sql)))))
+    (let ((*sql-log-stream* (or *sql-log-stream* t)))
+      (dbi:with-transaction (get-connection)
+        (dolist (sql (make-migration-sql class :yield nil))
+          (execute-sql sql))))))
 
 @export
 (defgeneric make-migration-sql (class &key yield)

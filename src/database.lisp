@@ -23,7 +23,7 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defvar *sql-log-stream* t)
+(defvar *sql-log-stream* nil)
 
 @export
 (defmethod retrieve-sql ((sql string) &rest bind)
