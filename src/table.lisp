@@ -101,7 +101,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
                class))))
 
 (defmethod reinitialize-instance :around ((class dao-table-class) &rest initargs)
-  (let ((generate-slots (car (slot-value class 'generate-slots))))
+  (let ((generate-slots (car (getf initargs :generate-slots))))
     (if (or generate-slots
             (initargs-contains-primary-key initargs))
         (setf (getf initargs :direct-slots)
