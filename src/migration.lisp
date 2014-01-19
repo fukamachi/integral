@@ -252,11 +252,14 @@
 
      (table-definition class :yield nil)
 
-     (insert-into orig-table-name (mapcar (lambda (slot)
-                                            (intern (symbol-name-literally (table-column-name slot))
-                                                    :keyword))
-                                          (database-column-slots class))
-       (select (mapcar (lambda (column)
-                         (intern (string-upcase (car column)) :keyword))
-                       column-definitions)
-         (from tmp-table-name))))))
+     (let* ((column-names (mapcar (lambda (column)
+                                    (intern (car column) :keyword))
+                                  column-definitions))
+            (slot-names (mapcar (lambda (slot)
+                                  (intern (symbol-name-literally (table-column-name slot))
+                                          :keyword))
+                                (database-column-slots class)))
+            (same (list-diff column-names slot-names)))
+       (insert-into orig-table-name same
+         (select same
+           (from tmp-table-name)))))))
