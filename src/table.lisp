@@ -132,6 +132,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (when (and *auto-migration-mode*
                (not generate-slots)
                (connected-p))
+      (ensure-table-exists class)
       (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                class))))
 
@@ -153,6 +154,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (when (and *auto-migration-mode*
                  (not generate-slots)
                  (connected-p))
+        (ensure-table-exists class)
         (funcall (symbol-function (intern #.(string :migrate-table) (find-package :integral.migration)))
                  class)))))
 
