@@ -18,7 +18,8 @@
                 :ensure-table-exists
                 :recreate-table
                 :inflate
-                :deflate)
+                :deflate
+                :initialize-dao-table-class)
   (:import-from :integral.database
                 :retrieve-sql
                 :execute-sql)
@@ -211,6 +212,7 @@
   (apply #'select-dao (find-class class) expressions))
 
 (defmethod make-find-sql ((class <dao-table-class>) &rest pk-values)
+  (initialize-dao-table-class class)
   (let ((primary-key (table-primary-key class)))
     (unless primary-key
       (error '<unknown-primary-key-error>

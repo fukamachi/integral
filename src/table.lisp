@@ -322,6 +322,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (execute-sql (drop-table (intern (table-name class) :keyword)))
       (ensure-table-exists class))))
 
+@export
 (defgeneric initialize-dao-table-class (class)
   (:method ((class <dao-table-class>))
     (when (initializedp class)
