@@ -13,6 +13,7 @@
   (:import-from :integral.column
                 :table-column-definition)
   (:import-from :integral.table
+                :database-column-slots
                 :initializedp))
 (in-package :integral-test.table)
 
@@ -151,7 +152,7 @@
   (:table-name "tweets")
   (:generate-slots t))
 
-(is (c2mop:class-direct-slots (find-class 'tweet))
+(is (database-column-slots (find-class 'tweet))
     nil
     "No slots.")
 
@@ -165,7 +166,7 @@
 
 (ok (make-instance 'tweet))
 
-(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+(let ((slots (database-column-slots (find-class 'tweet))))
   (is (length slots) 3)
   (ok (every (lambda (slot)
                (typep slot 'table-column-definition))
@@ -178,7 +179,7 @@
   (:table-name "tweets")
   (:generate-slots t))
 
-(is (c2mop:class-direct-slots (find-class 'tweet))
+(is (database-column-slots (find-class 'tweet))
     nil
     "No slots, again.")
 (ok (not (initializedp (find-class 'tweet))))
@@ -191,12 +192,12 @@
   (:table-name "tweets")
   (:generate-slots t))
 
-(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+(let ((slots (database-column-slots (find-class 'tweet))))
   (is (length slots) 1))
 
 (ok (make-instance 'tweet))
 
-(let ((slots (c2mop:class-direct-slots (find-class 'tweet))))
+(let ((slots (database-column-slots (find-class 'tweet))))
   (is (length slots) 3)
   (ok (every (lambda (slot)
                (typep slot 'table-column-definition))

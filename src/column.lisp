@@ -87,14 +87,25 @@
           :primary-key ,(primary-key-p column)
           :not-null ,not-null)))))
 
+(defvar *table-column-definition-slots*
+  (mapcar #'c2mop:slot-definition-name
+          (c2mop:class-direct-slots (find-class 'table-column-definition))))
+
 @export
 (defgeneric slot-definition-to-plist (slot)
   (:method ((slot standard-slot-definition))
-    (list :name (slot-definition-name slot)
-          :initform (slot-definition-initform slot)
-          :initfunction (slot-definition-initfunction slot)
-          :type (slot-definition-type slot)
-          :allocation (slot-definition-allocation slot)
-          :initargs (slot-definition-initargs slot)
-          :readers (slot-definition-readers slot)
-          :writers (slot-definition-writers slot))))
+    (append
+     (list :name (slot-definition-name slot)
+           :initform (slot-definition-initform slot)
+           :initfunction (slot-definition-initfunction slot)
+           :type (slot-definition-type slot)
+           :allocation (slot-definition-allocation slot)
+           :initargs (slot-definition-initargs slot)
+           :readers (slot-definition-readers slot)
+           :writers (slot-definition-writers slot))
+     (mapcan (lambda (slot-name)
+               (if (slot-boundp slot slot-name)
+                   (list (intern (string slot-name) :keyword)
+                         (slot-value slot slot-name))
+                   nil))
+             *table-column-definition-slots*))))
