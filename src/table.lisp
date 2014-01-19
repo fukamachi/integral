@@ -64,6 +64,20 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (declare (ignore object slot-name))
     value))
 
+(defmethod print-object ((object <dao-class>) stream)
+  (let* ((table-class (class-of object))
+         (primary-keys (table-primary-key table-class)))
+    (if primary-keys
+        (format stream "#<~A ~{~(~A~): ~A~^ ~}>"
+                (class-name table-class)
+                (mapcan (lambda (key)
+                          (list key
+                                (if (slot-boundp object key)
+                                    (prin1-to-string (slot-value object key))
+                                    "<unbound>")))
+                        primary-keys))
+        (call-next-method))))
+
 @export
 (defclass <dao-table-class> (standard-class)
   ((primary-key :initarg :primary-key)
