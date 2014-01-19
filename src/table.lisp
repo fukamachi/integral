@@ -347,7 +347,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
                    (destructuring-bind (name &key type not-null primary-key auto-increment &allow-other-keys) column
                      (let* ((name-string (string-upcase name))
                             (accessor-fn (intern (format nil "~A-~A" (class-name class)
-                                                         name-string)
+                                                         (substitute #\- #\_ name-string))
                                                  package)))
                        (list :name (intern name-string package)
                              :col-type type
