@@ -19,7 +19,8 @@
                 :recreate-table
                 :inflate
                 :deflate
-                :initialize-dao-table-class)
+                :initialize-dao-table-class
+                :dao-synced)
   (:import-from :integral.database
                 :retrieve-sql
                 :execute-sql)
@@ -137,6 +138,7 @@
       (unless sqlite3-p
         (when-let (pk-value (get-pk-value))
           (setf (slot-value obj serial-key) pk-value)))
+      (setf (dao-synced obj) T)
       obj)))
 
 (defmethod make-update-sql ((obj <dao-class>))
@@ -180,7 +182,9 @@
 
 @export
 (defmethod delete-dao ((obj <dao-class>))
-  (execute-sql (make-delete-sql obj)))
+  (prog1
+      (execute-sql (make-delete-sql obj))
+    (setf (dao-synced obj) nil)))
 
 (defun plist-to-dao (class plist)
   (let ((obj (make-instance class)))
@@ -192,6 +196,7 @@
           unless (eq val undef)
             do (setf (slot-value obj column-name)
                      (inflate obj column-name val)))
+    (setf (dao-synced obj) T)
     obj))
 
 @export
@@ -245,3 +250,9 @@
 @export
 (defmethod create-dao ((class symbol) &rest initargs)
   (apply #'create-dao (find-class class) initargs))
+
+@export
+(defmethod save-dao ((obj <dao-class>))
+  (if (dao-synced class)
+      (update-dao class)
+      (insert-dao class)))

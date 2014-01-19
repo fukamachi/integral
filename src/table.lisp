@@ -100,6 +100,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
 
 (defparameter *oid-slot-definition*
   '(:name %oid :col-type serial :auto-increment t :primary-key t :readers (getoid)))
+@export 'getoid
+
+(defparameter *synced-slot-definition*
+  `(:name %synced :type boolean :initform nil :initfunction ,(lambda () nil) :readers (dao-synced) :writers ((setf dao-synced)) :ghost t))
+@export 'dao-synced
 
 (defun initargs-contains-primary-key (initargs)
   (or (car (getf initargs :generate-slots))
@@ -119,6 +124,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
                             '(t))))
               (initargs-contains-primary-key initargs))
     (push *oid-slot-definition* (getf initargs :direct-slots)))
+
+  (push *synced-slot-definition* (getf initargs :direct-slots))
 
   (unless (contains-class-or-subclasses '<dao-class> direct-superclasses)
     (setf (getf initargs :direct-superclasses)
@@ -147,6 +154,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
                       :key #'car
                       :test #'eq))
         (push *oid-slot-definition* (getf initargs :direct-slots)))
+
+    (push *synced-slot-definition* (getf initargs :direct-slots))
+
     (prog1
         (apply #'call-next-method class initargs)
       (when generate-slots

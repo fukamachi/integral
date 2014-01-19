@@ -28,7 +28,7 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBI](https:
 (let ((tw (make-instance 'tweet
                          :status "Good morning, world."
                          :user "nitro_idiot")))
-  (insert-dao tw))
+  (save-dao tw))
 
 ;; Same as the above
 (create-dao 'tweet
@@ -39,7 +39,7 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBI](https:
   (with-slot (status user) tw
     (format t "~A said ~A" user status))
   (setf (tweet-status tw) "Good evening, world.")
-  (update-dao tw))
+  (save-dao tw))
 
 (let ((tw (find-dao 'tweet 3)))
   (delete-dao tw))
@@ -140,6 +140,7 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * update-dao ((obj &lt;dao-class&gt;))
 * delete-dao ((obj &lt;dao-class&gt;))
 * execute-sql ((sql string) &rest bind)
+* save-dao ((obj &lt;dao-class&gt;))
 * where
 * order-by
 * group-by
