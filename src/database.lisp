@@ -26,26 +26,26 @@
 (defvar *sql-log-stream* nil)
 
 @export
-(defmethod retrieve-sql ((sql string) &rest bind)
+(defmethod retrieve-raw-sql ((sql string) &optional binds)
   (dbi:fetch-all
    (apply #'dbi:execute (dbi:prepare (get-connection) sql)
-          bind)))
+          binds)))
 
 @export
-(defmethod retrieve-sql ((sql sql-statement) &rest bind)
-  (declare (ignore bind))
-  (multiple-value-bind (sql bind)
+(defmethod retrieve-raw-sql ((sql sql-statement) &optional binds)
+  (declare (ignore binds))
+  (multiple-value-bind (sql binds)
       (with-quote-char (sxql:yield sql))
-    (apply #'retrieve-sql sql bind)))
+    (retrieve-raw-sql sql binds)))
 
 @export
-(defmethod execute-sql ((sql string) &rest bind)
+(defmethod execute-sql ((sql string) &optional binds)
   (format *sql-log-stream* "~&~A;~%" sql)
-  (apply #'dbi:do-sql (get-connection) sql bind))
+  (apply #'dbi:do-sql (get-connection) sql binds))
 
 @export
-(defmethod execute-sql ((sql sql-statement) &rest bind)
-  (declare (ignore bind))
-  (multiple-value-bind (sql bind)
+(defmethod execute-sql ((sql sql-statement) &optional binds)
+  (declare (ignore binds))
+  (multiple-value-bind (sql binds)
       (with-quote-char (sxql:yield sql))
-    (apply #'execute-sql sql bind)))
+    (execute-sql sql binds)))

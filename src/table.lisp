@@ -380,3 +380,20 @@ If you want to use another class, specify it as a superclass in the usual way.")
 
     (setf (initializedp class) t)
     class))
+
+@export
+(defgeneric make-dao-instance (class &rest initargs)
+  (:method ((class symbol) &rest initargs)
+    (apply #'make-dao-instance (find-class class) initargs))
+  (:method ((class <dao-table-class>) &rest initargs)
+    (let ((obj (make-instance class)))
+      ;; Ignore columns which is not defined in defclass as a slot.
+      (loop with undef = '#:undef
+            for column-name in (database-column-slot-names class)
+            for val = (getf initargs (intern (symbol-name-literally column-name) :keyword)
+                            undef)
+            unless (eq val undef)
+              do (setf (slot-value obj column-name)
+                       (inflate obj column-name val)))
+      (setf (dao-synced obj) T)
+      obj)))

@@ -20,9 +20,10 @@
                 :inflate
                 :deflate
                 :initialize-dao-table-class
-                :dao-synced)
+                :dao-synced
+                :make-dao-instance)
   (:import-from :integral.database
-                :retrieve-sql
+                :retrieve-raw-sql
                 :execute-sql)
   (:import-from :integral.error
                 :<integral-error>
@@ -56,6 +57,8 @@
                 :*auto-migration-mode*)
   (:import-from :integral.util
                 :symbol-name-literally)
+  (:import-from :sxql.sql-type
+                :sql-statement)
   (:import-from :alexandria
                 :when-let)
   (:export :connect-toplevel
@@ -186,19 +189,6 @@
       (execute-sql (make-delete-sql obj))
     (setf (dao-synced obj) nil)))
 
-(defun plist-to-dao (class plist)
-  (let ((obj (make-instance class)))
-    ;; Ignore columns which is not defined in defclass as a slot.
-    (loop with undef = '#:undef
-          for column-name in (database-column-slot-names class)
-          for val = (getf plist (intern (symbol-name-literally column-name) :keyword)
-                          undef)
-          unless (eq val undef)
-            do (setf (slot-value obj column-name)
-                     (inflate obj column-name val)))
-    (setf (dao-synced obj) T)
-    obj))
-
 @export
 (defmethod select-dao ((class <dao-table-class>) &rest expressions)
   (let ((select-sql (select :*
@@ -207,10 +197,7 @@
     (dolist (ex expressions)
       (add-child select-sql ex))
 
-    (let ((result (retrieve-sql select-sql)))
-      (mapcar #'(lambda (plist)
-                  (plist-to-dao class plist))
-              result))))
+    (retrieve-sql select-sql :as class)))
 
 @export
 (defmethod select-dao ((class symbol) &rest expressions)
@@ -235,8 +222,9 @@
 
 @export
 (defmethod find-dao ((class <dao-table-class>) &rest pk-values)
-  (let ((result (car (retrieve-sql (apply #'make-find-sql class pk-values)))))
-    (plist-to-dao class result)))
+  (car
+   (retrieve-sql (apply #'make-find-sql class pk-values)
+                 :as class)))
 
 @export
 (defmethod find-dao ((class symbol) &rest pk-values)
@@ -253,6 +241,22 @@
 
 @export
 (defmethod save-dao ((obj <dao-class>))
-  (if (dao-synced class)
-      (update-dao class)
-      (insert-dao class)))
+  (if (dao-synced obj)
+      (update-dao obj)
+      (insert-dao obj)))
+
+@export
+(defmethod retrieve-sql ((sql string) &key binds as)
+  (let ((results (retrieve-raw-sql sql binds)))
+    (if as
+        (mapcar (lambda (result)
+                  (apply #'make-dao-instance as result))
+                results)
+        results)))
+
+@export
+(defmethod retrieve-sql ((sql sql-statement) &key binds as)
+  (declare (ignore binds))
+  (multiple-value-bind (sql binds)
+      (with-quote-char (sxql:yield sql))
+    (retrieve-sql sql :binds binds :as as)))

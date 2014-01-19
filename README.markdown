@@ -139,7 +139,8 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * create-dao ((class &lt;dao-table-class&gt;) &rest initargs)
 * update-dao ((obj &lt;dao-class&gt;))
 * delete-dao ((obj &lt;dao-class&gt;))
-* execute-sql ((sql string) &rest bind)
+* execute-sql ((sql string) &optional binds)
+* retrieve-sql ((sql string) &key binds as)
 * save-dao ((obj &lt;dao-class&gt;))
 * where
 * order-by
