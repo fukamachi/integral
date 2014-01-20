@@ -23,7 +23,7 @@
                 :dao-synced
                 :make-dao-instance)
   (:import-from :integral.database
-                :retrieve-raw-sql
+                :retrieve-by-raw-sql
                 :execute-sql)
   (:import-from :integral.error
                 :<integral-error>
@@ -74,7 +74,7 @@
            :ensure-table-exists
            :recreate-table
 
-           :retrieve-sql
+           :retrieve-by-sql
            :execute-sql
 
            :*auto-migration-mode*
@@ -197,7 +197,7 @@
     (dolist (ex expressions)
       (add-child select-sql ex))
 
-    (retrieve-sql select-sql :as class)))
+    (retrieve-by-sql select-sql :as class)))
 
 @export
 (defmethod select-dao ((class symbol) &rest expressions)
@@ -223,8 +223,8 @@
 @export
 (defmethod find-dao ((class <dao-table-class>) &rest pk-values)
   (car
-   (retrieve-sql (apply #'make-find-sql class pk-values)
-                 :as class)))
+   (retrieve-by-sql (apply #'make-find-sql class pk-values)
+                    :as class)))
 
 @export
 (defmethod find-dao ((class symbol) &rest pk-values)
@@ -246,8 +246,8 @@
       (insert-dao obj)))
 
 @export
-(defmethod retrieve-sql ((sql string) &key binds as)
-  (let ((results (retrieve-raw-sql sql binds)))
+(defmethod retrieve-by-sql ((sql string) &key binds as)
+  (let ((results (retrieve-by-raw-sql sql binds)))
     (if as
         (mapcar (lambda (result)
                   (apply #'make-dao-instance as result))
@@ -255,8 +255,8 @@
         results)))
 
 @export
-(defmethod retrieve-sql ((sql sql-statement) &key binds as)
+(defmethod retrieve-by-sql ((sql sql-statement) &key binds as)
   (declare (ignore binds))
   (multiple-value-bind (sql binds)
       (with-quote-char (sxql:yield sql))
-    (retrieve-sql sql :binds binds :as as)))
+    (retrieve-by-sql sql :binds binds :as as)))

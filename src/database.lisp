@@ -26,17 +26,17 @@
 (defvar *sql-log-stream* nil)
 
 @export
-(defmethod retrieve-raw-sql ((sql string) &optional binds)
+(defmethod retrieve-by-raw-sql ((sql string) &optional binds)
   (dbi:fetch-all
    (apply #'dbi:execute (dbi:prepare (get-connection) sql)
           binds)))
 
 @export
-(defmethod retrieve-raw-sql ((sql sql-statement) &optional binds)
+(defmethod retrieve-by-raw-sql ((sql sql-statement) &optional binds)
   (declare (ignore binds))
   (multiple-value-bind (sql binds)
       (with-quote-char (sxql:yield sql))
-    (retrieve-raw-sql sql binds)))
+    (retrieve-by-raw-sql sql binds)))
 
 @export
 (defmethod execute-sql ((sql string) &optional binds)
