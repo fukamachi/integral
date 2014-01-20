@@ -205,9 +205,24 @@ Then call `migrate-table`.
 (import 'integral:migrate-table)
 
 (migrate-table 'user)
-;-> DROP INDEX `%oid` ON `user`;
-;   ALTER TABLE `user` MODIFY COLUMN `%oid` SERIAL NOT NULL AUTO_INCREMENT;
-;   ALTER TABLE `user` ADD COLUMN `profile` TEXT AFTER `name`;
+;-> ALTER TABLE `user` ADD COLUMN `profile` TEXT AFTER `name`;
+;=> NIL
+```
+
+All changes of indexes and column types are also followed.
+
+```common-lisp
+(defclass user ()
+  ((id :col-type serial
+       :primary-key t)
+   (name :col-type (varchar 64)
+         :initarg :name)
+   (profile :col-type text
+            :initarg :profile))
+  (:metaclass <dao-table-class>))
+;-> ALTER TABLE `user` DROP COLUMN `%oid`;
+;   ALTER TABLE `user` MODIFY COLUMN `name` VARCHAR(64);
+;   ALTER TABLE `user` ADD COLUMN `id` SERIAL NOT NULL PRIMARY KEY FIRST;
 ;=> NIL
 ```
 
