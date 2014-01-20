@@ -45,31 +45,185 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBI](https:
   (delete-dao tw))
 ```
 
-## How to use
+## Quickstart
 
-### Generating database schema from CLOS definitions
+### Installation
 
-```common-lisp
-(defclass tweet ()
-  ((id :type serial
-       :primary-key t
-       :reader tweet-id)
-   (status :type string
-           :initarg :status
-           :accessor :tweet-status)
-   (user :type (varchar 64)
-         :initarg :user
-         :accessor :tweet-user))
-  (:metaclass <dao-table-class>)
-  (:keys user))
+Integral depends on the latest [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql). You have to download them from GitHub before installation.
 
-(table-definition 'tweet)
-;=> "CREATE TABLE tweet (id INTEGER AUTO_INCREMENT PRIMARY KEY, status TEXT, user VARCHAR(64), KEY (user))"
-
-(execute-sql (table-definition 'tweet))
+```
+$ cd ~/quicklisp/local-projects
+$ git clone git://github.com/fukamachi/cl-dbi
+$ git clone git://github.com/fukamachi/sxql
+$ git clone git://github.com/fukamachi/integral
 ```
 
-### Generating a class definition from DB schema
+After that you can `ql:quickload` Integral.
+
+```common-lisp
+(ql:quickload :integral)
+```
+
+### Connecting to database
+
+`connect-toplevel` is a function to establish a connection to a database.
+
+```common-lisp
+(import 'integral:connect-toplevel)
+
+(connect-toplevel :mysql
+                  :database-name "testdb"
+                  :username "nitro_idiot"
+                  :password "password")
+```
+
+Integral is intended to work with MySQL, PostgreSQL and SQLite3. Replace `:mysql` the above by your favorite RDBMS engine name.
+
+### Defining a database table
+
+In Integral, database tables are defined as CLOS classes. A table definition looks like this.
+
+```common-lisp
+(import 'integral:<dao-table-class>)
+
+(defclass user ()
+  ((name :col-type text
+         :initarg :name))
+  (:metaclass <dao-table-class>))
+```
+
+This `user` class means a "user" table in a database with a single "TEXT" column, "name".
+
+`table-definition` is a function to generate a `CREATE TABLE` SQL for it.
+
+```common-lisp
+(import '(integral:table-definition integral:execute-sql))
+
+(table-definition 'user)
+;=> "CREATE TABLE `user` (`%oid` SERIAL NOT NULL AUTO_INCREMENT PRIMARY KEY, `name` TEXT)"
+;   NIL
+
+(execute-sql (table-definition 'user))
+
+;; Same as the above except ignoring CREATE TABLE if it already exists.
+(ensure-table-exists 'user)
+```
+
+### Adding records
+
+Table classes can be called with `make-instance` like Common Lisp standard-class.
+
+```common-lisp
+(make-instance 'user :name "Eitarow Fukamachi")
+;=> #<USER %oid: <unbound>>
+```
+
+The instance won't be recorded in a database. Call `save-dao` it to add the record to a database.
+
+```common-lisp
+(import 'integral:save-dao)
+
+(save-dao (make-instance 'user :name "Eitarow Fukamachi"))
+;=> #<USER %oid: 1>
+
+(save-dao (make-instance 'user :name "Tomohiro Matsuyama"))
+;=> #<USER %oid: 2>
+```
+
+### Retrieving records
+
+```common-lisp
+(import 'integral:select-dao)
+
+(select-dao 'user)
+;=> (#<USER %oid: 1> #<USER %oid: 2>)
+
+(mapcar (lambda (row)
+          (slot-value row 'name))
+        (select-dao 'user))
+;=> ("Eitarow Fukamachi" "Tomohiro Matsuyama")
+```
+
+`select-dao` takes SxQL clauses. You can specify WHERE, ORDER BY or LIMIT with it.
+
+```common-lisp
+(import '(sxql:where sxql:limit))
+
+(select-dao 'user
+  (where (:= :name "Eitarow Fukamachi"))
+  (limit 1))
+;=> (#<USER %oid: 1>)
+```
+
+You can also use `find-dao` for retrieving a single row.
+
+```common-lisp
+(import 'integral:find-dao)
+
+(find-dao 'user 1)
+;=> #<USER %oid: 1>
+```
+
+### Updating records
+
+```common-lisp
+(let ((user (find-dao 'user 1)))
+  (setf (slot-value user 'name) "深町英太郎")
+  (save-dao user))
+```
+
+### Deleting records
+
+```common-lisp
+(import 'integral:delete-dao)
+
+(let ((user (find-dao 'user 1)))
+  (setf (slot-value user 'name) "深町英太郎")
+  (delete-dao user))
+```
+
+### Migration
+
+I introduced Integral generates a table schema from a CLOS class definition. But how can we do when we want to change the table schema after creating it.
+
+Integral has a function to apply the change of the class definition to a table schema. It is generally known as "Migration".
+
+For example, if you want to record a "profile" of users to "user" table, add a slot for it.
+
+```common-lisp
+(defclass user ()
+  ((name :col-type text
+         :initarg :name)
+   (profile :col-type text
+            :initarg :profile))
+  (:metaclass <dao-table-class>))
+```
+
+Then call `migrate-table`.
+
+```common-lisp
+(import 'integral:migrate-table)
+
+(migrate-table 'user)
+;-> DROP INDEX `%oid` ON `user`;
+;   ALTER TABLE `user` MODIFY COLUMN `%oid` SERIAL NOT NULL AUTO_INCREMENT;
+;   ALTER TABLE `user` ADD COLUMN `profile` TEXT AFTER `name`;
+;=> NIL
+```
+
+### Mystique: Auto-migration
+
+In development, class redefinitions are done many times. It's boring to execute `migrate-table` for each single time, isn't it?
+
+Integral has **auto-migration** feature for executing `migrate-table` after redefinitions automatically.
+
+Set `*auto-migration-mode*` T to use the mode.
+
+```common-lisp
+(setf integral:*auto-migration-mode* t)
+```
+
+### Another Way: define a class from an existing table
 
 If you'd like to administrate a database directly by writing raw SQLs, or wanna use Integral for an existing database, you can generate slot definitions from it.
 
@@ -79,13 +233,11 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
   (:generate-slots t))
 ```
 
-`:generate-slots` option means slot definitions follow database schema. Note you must establish a database connection before the first `allocate-instance`.
-
-### Auto-migration mode
-
-If `integral:*auto-migration-mode*` is set `T`, all class changes will be applied to database tables automatically.
+`:generate-slots` option means slot definitions follow database schema. Note you must establish a database connection before the first `make-instance`.
 
 ### inflate/deflate
+
+`inflate` and `deflate` is a feature to convert data between a database and Common Lisp.
 
 ```common-lisp
 (defclass user ()
@@ -110,6 +262,25 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 
 (slot-value (find-dao 'user 1) 'created_at)
 ;=> @2014-01-19T11:52:07.000000+09:00
+```
+
+### Wanna write a raw SQL?
+
+```common-lisp
+(import 'integral:retrieve-by-sql)
+
+(retrieve-by-sql "SELECT * FROM user")
+;=> ((:|%oid| 1 :|name| "深町英太郎"
+;     :|profile| "I love Common Lisp and beer")
+;    (:|%oid| 2 :|name| "Tomohiro Matsuyama"
+;     :|profile| NIL))
+```
+
+`retrieve-by-sql` takes `:as` keyword argument to specify a class of the result record.
+
+```common-lisp
+(retrieve-sql "SELECT * FROM user" :as 'user)
+;=> (#<USER %oid: 1> #<USER %oid: 2>)
 ```
 
 ## Symbols
@@ -169,20 +340,10 @@ If `integral:*auto-migration-mode*` is set `T`, all class changes will be applie
 * &lt;type-missing-error&gt;
 * &lt;migration-error&gt;
 
-## Installation
+## See Also
 
-As Integral depends on the latest [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql), you have to download them before installation.
-
-```
-$ cd ~/quicklisp/local-projects
-$ git clone git://github.com/fukamachi/cl-dbi
-$ git clone git://github.com/fukamachi/sxql
-$ git clone git://github.com/fukamachi/integral
-```
-
-```
-(ql:quickload :integral)
-```
+* [CL-DBI](http://8arrow.org/cl-dbi/) - Database independent interface library.
+* [SxQL](http://8arrow.org/sxql/) - SQL builder library.
 
 ## Author
 
