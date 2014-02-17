@@ -22,7 +22,8 @@
                :closer-mop
                :split-sequence
                :group-by
-               :alexandria)
+               :alexandria
+               :trivial-types)
   :components ((:module "src"
                 :components
                 ((:file "integral" :depends-on ("connection" "table" "database" "migration" "type" "error" "variable"))

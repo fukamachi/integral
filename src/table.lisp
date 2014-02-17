@@ -42,7 +42,9 @@
                 :index-key
                 :yield)
   (:import-from :alexandria
-                :ensure-list))
+                :ensure-list)
+  (:import-from :trivial-types
+                :proper-list))
 (in-package :integral.table)
 
 (cl-syntax:use-syntax :annot)
