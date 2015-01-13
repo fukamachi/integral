@@ -145,12 +145,12 @@
              (alter-table (intern (table-name class) :keyword)
                (drop-primary-key))
              nil)
-         (if (eq (database-type) :mysql)
-             (mapcar (lambda (old)
-                       (drop-index (car old)
-                                   :on (intern (table-name class) :keyword)))
-                     old-keys)
-             nil))))))
+         (mapcar (lambda (old)
+                   (apply #'drop-index (car old)
+                          (if (eq (database-type) :mysql)
+                              (list :on (intern (table-name class) :keyword))
+                              nil)))
+                 old-keys))))))
 
 (defun compute-migrate-table-columns (class)
   (let ((column-definitions (retrieve-table-column-definitions-by-name
