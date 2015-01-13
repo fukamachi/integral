@@ -12,7 +12,7 @@
   :author "Eitarow Fukamachi"
   :license "BSD 3-Clause"
   :depends-on (:integral
-               :cl-test-more
+               :prove
                :uiop)
   :components ((:module "t"
                 :components
@@ -30,13 +30,12 @@
                  (:test-file "migration/postgres")
                  (:test-file "integral"))))
 
-  :defsystem-depends-on (:cl-test-more)
+  :defsystem-depends-on (:prove-asdf)
   :perform (test-op :after (op c)
                     (let* ((sql-log (intern #.(string :*sql-log-stream*) (find-package :integral.database)))
                            (val (symbol-value sql-log)))
                       (setf (symbol-value sql-log) (make-broadcast-stream))
                       (unwind-protect
-                           (funcall (intern #.(string :run-test-system) :cl-test-more)
+                           (funcall (intern #.(string :run-test-system) :prove.asdf)
                                     c)
-                        (setf (symbol-value sql-log) val)))
-                    (asdf:clear-system c)))
+                        (setf (symbol-value sql-log) val)))))

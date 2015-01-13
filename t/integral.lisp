@@ -8,7 +8,7 @@
   (:use :cl
         :integral
         :integral-test.init
-        :cl-test-more)
+        :prove)
   (:import-from :integral
                 :make-insert-sql
                 :make-update-sql

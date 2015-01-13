@@ -9,7 +9,7 @@
         :integral
         :integral.migration
         :integral-test.init
-        :cl-test-more)
+        :prove)
   (:import-from :integral.migration
                 :compute-migrate-table-columns
                 :make-migration-sql)

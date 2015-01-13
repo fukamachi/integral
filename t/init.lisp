@@ -6,8 +6,7 @@
 (in-package :cl-user)
 (defpackage integral-test.init
   (:use :cl
-        :integral
-        :cl-test-more)
+        :integral)
   (:export connect-to-testdb))
 (in-package :integral-test.init)
 

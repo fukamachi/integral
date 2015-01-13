@@ -6,7 +6,7 @@
 (in-package :cl-user)
 (defpackage integral-test.type
   (:use :cl
-        :cl-test-more
+        :prove
         :integral
         :integral.type))
 (in-package :integral-test.type)

@@ -6,7 +6,7 @@
 (in-package :cl-user)
 (defpackage integral-test.connection.postgres
   (:use :cl
-        :cl-test-more
+        :prove
         :integral-test.init
         :dbi
         :integral

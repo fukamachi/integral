@@ -9,7 +9,7 @@
         :integral
         :integral.table
         :integral-test.init
-        :cl-test-more)
+        :prove)
   (:import-from :integral.column
                 :table-column-definition)
   (:import-from :integral.table
