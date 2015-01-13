@@ -22,6 +22,21 @@
   (setf (find-class 'tweet) nil))
 
 (defclass tweet ()
+  ((user :type (varchar 128)
+         :accessor :tweet-user))
+  (:metaclass <dao-table-class>)
+  (:table-name "tweets"))
+
+(execute-sql "DROP TABLE IF EXISTS tweets")
+(execute-sql (table-definition 'tweet))
+
+(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+    '(nil nil nil))
+
+(when (find-class 'tweet nil)
+  (setf (find-class 'tweet) nil))
+
+(defclass tweet ()
   ((id :type serial
        :primary-key t
        :reader tweet-id)
@@ -178,5 +193,29 @@
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
     '(nil nil nil))
+
+(defmacro define-migration-test (before after &rest migration-sqls)
+  (let ((class (gensym "CLASS")))
+    `(let ((,class ,before))
+       (progn
+         (ensure-table-exists ,class)
+         (migrate-table ,class)
+         (let ((,class ,after))
+           (is (make-migration-sql ,class)
+               (list ,@migration-sqls)))))))
+
+(setf (find-class 'tweet) nil)
+
+(define-migration-test
+    (defclass tweet ()
+      ((user :type (varchar 128)
+             :accessor :tweet-user))
+      (:metaclass <dao-table-class>)
+      (:table-name "tweets"))
+    (defclass tweet ()
+      ((user :type (varchar 128)
+             :accessor :tweet-user))
+      (:metaclass <dao-table-class>)
+      (:table-name "tweets")))
 
 (finalize)
