@@ -49,17 +49,6 @@ Integral is an object relational mapper for Common Lisp based on [CL-DBI](https:
 
 ### Installation
 
-Integral depends on the latest [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql). You have to download them from GitHub before installation.
-
-```
-$ cd ~/quicklisp/local-projects
-$ git clone git://github.com/fukamachi/cl-dbi
-$ git clone git://github.com/fukamachi/sxql
-$ git clone git://github.com/fukamachi/integral
-```
-
-After that you can `ql:quickload` Integral.
-
 ```common-lisp
 (ql:quickload :integral)
 ```
