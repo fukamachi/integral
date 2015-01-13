@@ -1,5 +1,7 @@
 # Integral
 
+[![Build Status](https://travis-ci.org/fukamachi/integral.svg?branch=master)](https://travis-ci.org/fukamachi/integral)
+
 Integral is an object relational mapper for Common Lisp based on [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
 <span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
