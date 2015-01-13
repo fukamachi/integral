@@ -268,6 +268,18 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 ;=> @2014-01-19T11:52:07.000000+09:00
 ```
 
+### Relations
+
+Although Integral doesn't have a specific feature for relations like `:has-a` and `:has-many`, it can be done with normal methods.
+
+```common-lisp
+(defmethod user-config ((user user))
+  (find-dao 'user-config (user-id user)))
+
+(defmethod user-entries ((user user))
+  (select-dao 'entry (where (:= :user_id (user-id user)))))
+```
+
 ### Wanna write a raw SQL?
 
 ```common-lisp
