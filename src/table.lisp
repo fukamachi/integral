@@ -95,7 +95,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
    (auto-pk :type (proper-list 'boolean)
             :initarg :auto-pk
             :initform '(t))
-   (%initialized :type (proper-list 'boolean)
+   (%initialized :type boolean
                  :initform nil
                  :accessor initializedp))
   (:documentation "Metaclass to define classes for your database-access objects as regular CLOS classes."))
