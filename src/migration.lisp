@@ -149,10 +149,7 @@
              (mapcar (lambda (old)
                        (drop-index (car old)
                                    :on (intern (table-name class) :keyword)))
-                     (remove "%oid"
-                             old-keys
-                             :key #'car
-                             :test #'string=))
+                     old-keys)
              nil))))))
 
 (defun compute-migrate-table-columns (class)

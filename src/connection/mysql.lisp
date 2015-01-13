@@ -43,6 +43,7 @@
                                  FROM information_schema.statistics
                                  WHERE table_schema = '~A'
                                    AND table_name = '~A'
+                                   AND index_name <> '%oid'
                                  ORDER BY index_name, seq_in_index"
                                (connection-database-name conn)
                                table-name))))
