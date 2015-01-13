@@ -12,7 +12,7 @@
                 :table-definition))
 (in-package :integral-test.migration.mysql)
 
-(plan 25)
+(plan 27)
 
 (disconnect-toplevel)
 
