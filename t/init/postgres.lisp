@@ -9,4 +9,4 @@
   (disconnect-toplevel)
   (connect-toplevel :postgres
                     :database-name "integral_test"
-                    :username "nitro_idiot"))
+                    :username "nobody"))
