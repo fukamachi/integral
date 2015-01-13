@@ -1,10 +1,10 @@
 #|
   This file is a part of integral project.
-  Copyright (c) 2014 Eitarow Fukamachi (e.arrows@gmail.com)
+  Copyright (c) 2014 Eitaro Fukamachi (e.arrows@gmail.com)
 |#
 
 #|
-  Author: Eitarow Fukamachi (e.arrows@gmail.com)
+  Author: Eitaro Fukamachi (e.arrows@gmail.com)
 |#
 
 (in-package :cl-user)
@@ -14,7 +14,7 @@
 
 (defsystem integral
   :version "0.0.1"
-  :author "Eitarow Fukamachi"
+  :author "Eitaro Fukamachi"
   :license "BSD 3-Clause"
   :depends-on (:cl-syntax-annot
                :sxql

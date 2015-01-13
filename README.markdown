@@ -103,7 +103,7 @@ This `user` class means a "user" table in a database with a single "TEXT" column
 Table classes can be called with `make-instance` like Common Lisp standard-class.
 
 ```common-lisp
-(make-instance 'user :name "Eitarow Fukamachi")
+(make-instance 'user :name "Eitaro Fukamachi")
 ;=> #<USER %oid: <unbound>>
 ```
 
@@ -112,7 +112,7 @@ The instance won't be recorded in a database. Call `save-dao` it to add the reco
 ```common-lisp
 (import 'integral:save-dao)
 
-(save-dao (make-instance 'user :name "Eitarow Fukamachi"))
+(save-dao (make-instance 'user :name "Eitaro Fukamachi"))
 ;=> #<USER %oid: 1>
 
 (save-dao (make-instance 'user :name "Tomohiro Matsuyama"))
@@ -130,7 +130,7 @@ The instance won't be recorded in a database. Call `save-dao` it to add the reco
 (mapcar (lambda (row)
           (slot-value row 'name))
         (select-dao 'user))
-;=> ("Eitarow Fukamachi" "Tomohiro Matsuyama")
+;=> ("Eitaro Fukamachi" "Tomohiro Matsuyama")
 ```
 
 `select-dao` takes SxQL clauses. You can specify WHERE, ORDER BY or LIMIT with it.
@@ -139,7 +139,7 @@ The instance won't be recorded in a database. Call `save-dao` it to add the reco
 (import '(sxql:where sxql:limit))
 
 (select-dao 'user
-  (where (:= :name "Eitarow Fukamachi"))
+  (where (:= :name "Eitaro Fukamachi"))
   (limit 1))
 ;=> (#<USER %oid: 1>)
 ```
@@ -363,11 +363,11 @@ Although Integral doesn't have a specific feature for relations like `:has-a` an
 
 ## Author
 
-* Eitarow Fukamachi (e.arrows@gmail.com)
+* Eitaro Fukamachi (e.arrows@gmail.com)
 
 ## Copyright
 
-Copyright (c) 2014 Eitarow Fukamachi (e.arrows@gmail.com)
+Copyright (c) 2014 Eitaro Fukamachi (e.arrows@gmail.com)
 
 # License
 
