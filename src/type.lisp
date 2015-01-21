@@ -3,10 +3,10 @@
   (:use :cl)
   (:import-from :integral.util
                 :symbol-name-literally)
-  (:import-from :split-sequence
-                :split-sequence)
   (:import-from :alexandria
-                :ensure-list))
+                :ensure-list
+                :make-keyword
+                :compose))
 (in-package :integral.type)
 
 (cl-syntax:use-syntax :annot)
@@ -80,7 +80,7 @@
 @export
 (defgeneric cltype-to-dbtype (type &rest args)
   (:method ((type t) &rest args)
-    (let ((dbtype (intern (string type) :keyword)))
+    (let ((dbtype (make-keyword (string type))))
       (if args
           `(,dbtype ,@args)
           dbtype)))
@@ -88,29 +88,35 @@
     (declare (ignore args))
     (apply #'cltype-to-dbtype type)))
 
+(defun parse-type-vars (vars)
+  (ppcre:split "(?:'|\")\\s*,\\s*(?:'|\")"
+               (string-trim #(#\' #\") vars)))
+
 @export
 (defun string-to-dbtype (type)
-  (setf type (string-upcase type))
-  (let* ((open-paren-pos (position #\( type))
-         (close-paren-pos (and open-paren-pos
-                               (position #\) type :start (1+ open-paren-pos)))))
-    (destructuring-bind (dbtype &rest args)
-        (if open-paren-pos
-            (remove
-             nil
-             (list* (subseq type 0 open-paren-pos)
-                    (parse-integer (subseq type (1+ open-paren-pos) close-paren-pos))
-                    (if (< (1+ close-paren-pos) (length type))
-                        (mapcar (lambda (val) (intern val :keyword))
-                                (split-sequence #\Space type :start (1+ close-paren-pos) :remove-empty-subseqs t))
-                        nil)))
-            (list type))
-      (let* ((dbtype (intern dbtype :keyword))
+  (let ((matches
+          (nth-value 1
+                     (ppcre:scan-to-strings "^([^(]+)(?:\\(([^)]+)\\))?(?:\\s+(.+))?$" type))))
+    (unless matches
+      (error ""))
+    (let ((type (string-upcase (aref matches 0)))
+          (vars (aref matches 1))
+          (attrs (aref matches 2)))
+      (let* ((dbtype (make-keyword type))
              (dbtype (or (type-alias dbtype)
-                         dbtype)))
-        (if args
-            (cons dbtype args)
-            dbtype)))))
+                         dbtype))
+             (vars (and vars
+                        (or (ignore-errors (list (parse-integer vars)))
+                            (parse-type-vars vars))))
+             (attrs (and attrs
+                         (mapcar (compose #'make-keyword #'string-upcase)
+                                 (ppcre:split "\\s+" attrs)))))
+        (cond
+          ((or vars attrs)
+           `(,dbtype
+             ,@vars
+             ,@attrs))
+          (T dbtype))))))
 
 @export
 (defun is-type-equal (a b)

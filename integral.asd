@@ -19,6 +19,7 @@
   :depends-on (:cl-syntax-annot
                :sxql
                :dbi
+               :cl-ppcre
                :closer-mop
                :split-sequence
                :group-by

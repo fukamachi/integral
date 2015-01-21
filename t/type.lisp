@@ -6,7 +6,7 @@
         :integral.type))
 (in-package :integral-test.type)
 
-(plan 13)
+(plan 14)
 
 (is (cltype-to-dbtype 'integer)
     :integer)
@@ -44,5 +44,7 @@
     :myot)
 (is (string-to-dbtype "MY ORIGINAL TYPE(128)")
     '(:myot 128))
+(is (string-to-dbtype "ENUM('one', 'two', 'three')")
+    '(:enum "one" "two" "three"))
 
 (finalize)
