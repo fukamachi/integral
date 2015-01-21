@@ -264,7 +264,7 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 (defmethod integral:inflate ((object user) (slot-name (eql 'created_at)) value)
   (local-time:universal-to-timestamp value))
 (defmethod integral:deflate ((object user) (slot-name (eql 'created_at)) value)
-  (local-time:format-timestamp nil value))
+  (local-time:timestamp-to-universal value))
 
 (slot-value (find-dao 'user 1) 'created_at)
 ;=> @2014-01-19T11:52:07.000000+09:00
