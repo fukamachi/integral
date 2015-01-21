@@ -72,6 +72,16 @@
     (is (slot-value result 'status)
         (slot-value tweet 'status))))
 
+;; Adding the second record.
+(let ((tweet (make-instance 'tweet
+                            :status "Second tweet. Woohoo."
+                            :user "nitro_idiot")))
+  (ok (not (slot-boundp tweet 'id)))
+  (ok (insert-dao tweet)
+      "Can insert")
+  (is (slot-value tweet 'id) 2
+      "The auto increment ID should be incremented"))
+
 (is-type (find-dao 'tweet 1)
          'tweet)
 
