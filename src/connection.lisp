@@ -122,4 +122,4 @@ If no connections are established, NIL will be returned."
   (ecase (connection-driver-type conn)
     (:mysql    (integral.connection.mysql:last-insert-id conn))
     (:postgres (integral.connection.postgres:last-insert-id conn table-name serial-key-name))
-    (:sqlite3  (integral.connection.sqlite3:last-insert-id conn))))
+    (:sqlite3  (integral.connection.sqlite3:last-insert-id conn table-name))))

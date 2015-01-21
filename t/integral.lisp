@@ -20,7 +20,7 @@
   ((id :col-type bigint
        :auto-increment t
        :reader tweet-id)
-   (status :col-type text
+   (status :col-type (:varchar 140)
            :initarg :status
            :accessor :tweet-status)
    (user :col-type (:varchar 64)
@@ -54,6 +54,7 @@
 
 (connect-to-testdb)
 
+(execute-sql (sxql:drop-table (intern (table-name 'tweet) :keyword) :if-exists t))
 (execute-sql (table-definition 'tweet))
 
 (let ((tweet (make-instance 'tweet
@@ -71,6 +72,8 @@
         (slot-value tweet 'user))
     (is (slot-value result 'status)
         (slot-value tweet 'status))))
+
+(reconnect-to-testdb)
 
 ;; Adding the second record.
 (let ((tweet (make-instance 'tweet

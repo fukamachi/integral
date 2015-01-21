@@ -6,45 +6,59 @@
   (:import-from :dbi
                 :prepare
                 :execute
-                :fetch))
+                :fetch)
+  (:import-from :sxql
+                :select
+                :from
+                :order-by
+                :limit))
 (in-package :integral.connection.sqlite3)
 
 (cl-syntax:use-syntax :annot)
 
+(defun table-info (conn table-name)
+  (let* ((sql (format nil "PRAGMA table_info(\"~A\")" table-name)))
+    (or (dbi:fetch-all (dbi:execute (dbi:prepare conn sql)))
+        (error "Table \"~A\" doesn't exist." table-name))))
+
 @export
-(defun last-insert-id (conn)
-  (getf (dbi:fetch
-         (dbi:execute
-          (dbi:prepare conn "SELECT last_insert_rowid() AS last_insert_id")))
-        :|last_insert_id|))
+(defun last-insert-id (conn table-name)
+  (let ((primary-keys (table-primary-keys conn table-name)))
+    (when (cdr primary-keys)
+      (error "last-insert-id doesn't support composite primary keys."))
+    (let ((primary-key (intern (car primary-keys) :keyword)))
+      (getf (dbi:fetch
+             (dbi:execute
+              (dbi:prepare conn
+                           (sxql:yield
+                            (select ((:as primary-key :last_insert_id))
+                              (from (intern table-name :keyword))
+                              (order-by primary-key)
+                              (limit 1))))))
+            :|last_insert_id|
+            0))))
 
 @export
 (defun column-definitions (conn table-name)
   ;; FIXME: quote
-  (let* ((sql (format nil "PRAGMA table_info(\"~A\")" table-name))
-         (query (dbi:execute (dbi:prepare conn sql))))
-    (or (loop for column = (dbi:fetch query)
-              while column
-              collect (let* ((type (getf column :|type|))
-                             (pos (search "AUTO_INCREMENT" type :test #'string-equal)))
-                        (list (getf column :|name|)
-                              :type (string-to-dbtype
-                                     (if pos
-                                         (subseq type 0 (1- pos))
-                                         type))
-                              :auto-increment (not (null pos))
-                              :primary-key (= (getf column :|pk|) 1)
-                              :not-null (or (= (getf column :|pk|) 1)
-                                            (not (= (getf column :|notnull|) 0))))))
-        (error "Table \"~A\" doesn't exist." table-name))))
+  (loop for column in (table-info conn table-name)
+        collect (let* ((type (getf column :|type|))
+                       (pos (search "AUTO_INCREMENT" type :test #'string-equal)))
+                  (list (getf column :|name|)
+                        :type (string-to-dbtype
+                               (if pos
+                                   (subseq type 0 (1- pos))
+                                   type))
+                        :auto-increment (not (null pos))
+                        :primary-key (= (getf column :|pk|) 1)
+                        :not-null (or (= (getf column :|pk|) 1)
+                                      (not (= (getf column :|notnull|) 0)))))))
 
 (defun table-primary-keys (conn table-name)
   (mapcar #'(lambda (column) (getf column :|name|))
           (remove-if-not (lambda (column)
                            (= (getf column :|pk|) 1))
-                         (dbi:fetch-all
-                          (dbi:execute
-                           (dbi:prepare conn (format nil "PRAGMA table_info(~A)" table-name)))))))
+                         (table-info conn table-name))))
 
 @export
 (defun table-indices (conn table-name)

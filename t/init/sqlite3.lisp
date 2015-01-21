@@ -4,7 +4,8 @@
         :integral)
   (:import-from :uiop
                 :file-exists-p)
-  (:export :connect-to-testdb))
+  (:export :connect-to-testdb
+           :reconnect-to-testdb))
 (in-package :integral-test.init.sqlite3)
 
 (defvar *db-path* (asdf:system-relative-pathname :integral #P"t/test.db"))
@@ -18,4 +19,8 @@
 
 (defun connect-to-testdb ()
   (initialize-testdb)
+  (connect-toplevel :sqlite3 :database-name *db-path*))
+
+(defun reconnect-to-testdb ()
+  (disconnect-toplevel)
   (connect-toplevel :sqlite3 :database-name *db-path*))
