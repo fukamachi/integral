@@ -80,7 +80,7 @@
 @export
 (defgeneric cltype-to-dbtype (type &rest args)
   (:method ((type t) &rest args)
-    (let ((dbtype (make-keyword (string type))))
+    (let ((dbtype (make-keyword type)))
       (if args
           `(,dbtype ,@args)
           dbtype)))
