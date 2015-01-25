@@ -20,10 +20,29 @@
   "Current connection object.
 Don't use from other packages.")
 
-(defstruct connection
+@export
+(defvar *get-connection-fn* nil)
+
+(defstruct (connection (:constructor %make-connection))
   "Class of database connection"
   (connect-args nil :type list)
   (handle nil :type <dbi-connection>))
+
+@export
+(defun make-connection (driver-name &rest args &key database-name &allow-other-keys)
+  (declare (ignore database-name))
+  (let ((connection-handle (apply #'dbi:connect driver-name args)))
+          (%make-connection :connect-args args
+                           :handle connection-handle)))
+
+@export
+(defun connection-active-handle (connection)
+  (let ((handle (connection-handle connection)))
+    (if (dbi:ping handle)
+        handle
+        (progn
+          (dbi:disconnect handle)
+          (setf (connection-handle *db*) (apply #'connect (connection-driver-type handle) (connection-connect-args *db*)))))))
 
 @export
 (defun connect-toplevel (driver-name &rest args &key database-name &allow-other-keys)
@@ -36,9 +55,7 @@ Same as DBI:CONNECT except this has a simple cache mechanizm."
              (not (dbi:ping (connection-handle *db*))))
     (dbi:disconnect (connection-handle *db*)))
   (let ((connection-handle (apply #'dbi:connect driver-name args)))
-    (setf *db*
-          (make-connection :connect-args args
-                           :handle connection-handle))
+    (setf *db* (apply #'make-connection driver-name args))
     connection-handle))
 
 @export
@@ -55,20 +72,15 @@ If no connections established, this do nothing."
     (dbi:disconnect (connection-handle *db*))
     (setf *db* nil)))
 
-@export
 (defun get-connection (&key query)
   "Return the current established connection handle."
 
-  (declare (ignore query))
-  (unless (connected-p)
-    (error '<connection-not-established-error>))
+  (if *get-connection-fn* (funcall *get-connection-fn* :query query)
+      (progn
+        (unless (connected-p)
+          (error '<connection-not-established-error>))
 
-  (let ((handle (connection-handle *db*)))
-    (if (dbi:ping handle)
-        handle
-        (progn
-          (dbi:disconnect handle)
-          (setf (connection-handle *db*) (apply #'connect (connection-driver-type handle) (connection-connect-args *db*)))))))
+        (connection-active-handle *db*))))
 
 @export
 (defun database-type ()

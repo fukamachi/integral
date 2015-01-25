@@ -40,6 +40,9 @@
                 :timestamp)
   (:import-from :integral.connection
                 :get-connection
+                :make-connection
+                :*get-connection-fn*
+                :connection-active-handle
                 :connect-toplevel
                 :disconnect-toplevel
                 :last-insert-id
@@ -58,6 +61,9 @@
                 :when-let)
   (:export :connect-toplevel
            :disconnect-toplevel
+           :make-connection
+           :*get-connection-fn*
+           :connection-active-handle
 
            :<dao-class>
            :<dao-table-class>
