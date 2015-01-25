@@ -67,8 +67,7 @@ If no connections established, this do nothing."
         handle
         (progn
           (dbi:disconnect handle)
-          (setf *db* nil)
-          (apply #'connect (connection-connect-args *db*))))))
+          (setf (connection-handle *db*) (apply #'connect (connection-driver-type handle) (connection-connect-args *db*)))))))
 
 @export
 (defun database-type ()
