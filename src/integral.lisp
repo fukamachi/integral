@@ -42,7 +42,7 @@
                 :get-connection
                 :make-connection
                 :*get-connection-fn*
-                :connection-active-handle
+                :connection-established-handle
                 :connect-toplevel
                 :disconnect-toplevel
                 :last-insert-id
@@ -63,7 +63,7 @@
            :disconnect-toplevel
            :make-connection
            :*get-connection-fn*
-           :connection-active-handle
+           :connection-established-handle
 
            :<dao-class>
            :<dao-table-class>

@@ -21,7 +21,13 @@
 Don't use from other packages.")
 
 @export
-(defvar *get-connection-fn* nil)
+(defvar *get-connection-fn* (lambda (&key query)
+                              (declare (ignore query))
+                              (progn
+                                (unless (connected-p)
+                                  (error '<connection-not-established-error>))
+
+                                (connection-established-handle *db*))))
 
 (defstruct (connection (:constructor %make-connection))
   "Class of database connection"
@@ -32,11 +38,11 @@ Don't use from other packages.")
 (defun make-connection (driver-name &rest args &key database-name &allow-other-keys)
   (declare (ignore database-name))
   (let ((connection-handle (apply #'dbi:connect driver-name args)))
-          (%make-connection :connect-args args
-                           :handle connection-handle)))
+    (%make-connection :connect-args args
+                      :handle connection-handle)))
 
 @export
-(defun connection-active-handle (connection)
+(defun connection-established-handle (connection)
   (let ((handle (connection-handle connection)))
     (if (dbi:ping handle)
         handle
@@ -76,12 +82,7 @@ If no connections established, this do nothing."
 (defun get-connection (&key query)
   "Return the current established connection handle."
 
-  (if *get-connection-fn* (funcall *get-connection-fn* :query query)
-      (progn
-        (unless (connected-p)
-          (error '<connection-not-established-error>))
-
-        (connection-active-handle *db*))))
+  (funcall *get-connection-fn* :query query))
 
 @export
 (defun database-type ()
