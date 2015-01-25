@@ -23,7 +23,7 @@
 @export
 (defmethod retrieve-by-raw-sql ((sql string) &optional binds)
   (dbi:fetch-all
-   (apply #'dbi:execute (dbi:prepare (get-connection) sql)
+   (apply #'dbi:execute (dbi:prepare (get-connection :query sql) sql)
           binds)))
 
 @export
@@ -36,7 +36,7 @@
 @export
 (defmethod execute-sql ((sql string) &optional binds)
   (format *sql-log-stream* "~&~A;~%" sql)
-  (apply #'dbi:do-sql (get-connection) sql binds))
+  (apply #'dbi:do-sql (get-connection :query sql) sql binds))
 
 @export
 (defmethod execute-sql ((sql sql-statement) &optional binds)

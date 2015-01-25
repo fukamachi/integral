@@ -56,9 +56,10 @@ If no connections established, this do nothing."
     (setf *db* nil)))
 
 @export
-(defun get-connection ()
+(defun get-connection (&key query)
   "Return the current established connection handle."
 
+  (declare (ignore query))
   (unless (connected-p)
     (error '<connection-not-established-error>))
 
