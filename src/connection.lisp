@@ -72,6 +72,7 @@ If no connections established, this do nothing."
     (dbi:disconnect (connection-handle *db*))
     (setf *db* nil)))
 
+@export
 (defun get-connection (&key query)
   "Return the current established connection handle."
 
