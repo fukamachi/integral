@@ -18,8 +18,7 @@
 
 @export
 (defvar *db* nil
-  "Current connection object.
-Don't use from other packages.")
+  "Current connection object.")
 
 (defstruct (connection (:constructor %make-connection))
   "Class of database connection"
