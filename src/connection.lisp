@@ -16,14 +16,22 @@
 
 (cl-syntax:use-syntax :annot)
 
+@export
 (defvar *db* nil
   "Current connection object.
 Don't use from other packages.")
 
-(defstruct connection
+(defstruct (connection (:constructor %make-connection))
   "Class of database connection"
   (connect-args nil :type list)
   (handle nil :type <dbi-connection>))
+
+@export
+(defun make-connection (driver-name &rest args &key database-name &allow-other-keys)
+  (declare (ignore database-name))
+  (let ((connection-handle (apply #'dbi:connect driver-name args)))
+    (%make-connection :connect-args args
+                      :handle connection-handle)))
 
 @export
 (defun connect-toplevel (driver-name &rest args &key database-name &allow-other-keys)
@@ -35,11 +43,8 @@ Same as DBI:CONNECT except this has a simple cache mechanizm."
   (when (and *db*
              (not (dbi:ping (connection-handle *db*))))
     (dbi:disconnect (connection-handle *db*)))
-  (let ((connection-handle (apply #'dbi:connect driver-name args)))
-    (setf *db*
-          (make-connection :connect-args args
-                           :handle connection-handle))
-    connection-handle))
+  (setf *db* (apply #'make-connection driver-name args))
+  (connection-handle *db*))
 
 @export
 (defun connected-p ()

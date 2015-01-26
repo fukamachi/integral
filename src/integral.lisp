@@ -39,6 +39,8 @@
                 :date
                 :timestamp)
   (:import-from :integral.connection
+                :*db*
+                :make-connection
                 :get-connection
                 :connect-toplevel
                 :disconnect-toplevel
@@ -58,6 +60,9 @@
                 :when-let)
   (:export :connect-toplevel
            :disconnect-toplevel
+           :*db*
+           :make-connection
+           :get-connection
 
            :<dao-class>
            :<dao-table-class>
