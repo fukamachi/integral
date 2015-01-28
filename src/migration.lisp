@@ -24,7 +24,8 @@
                 :is-type-equal)
   (:import-from :integral.util
                 :list-diff
-                :symbol-name-literally)
+                :symbol-name-literally
+                :unlispify)
   (:import-from :dbi
                 :with-transaction)
   (:import-from :sxql
@@ -117,7 +118,7 @@
           nil
           (mapcar (lambda (new)
                     (let ((columns (mapcar (lambda (column)
-                                             (intern column :keyword))
+                                             (intern (string (unlispify column)) :keyword))
                                            (getf new :columns))))
                       (if (getf new :primary-key)
                           (if (and (not (eq (database-type) :postgres))
@@ -161,7 +162,7 @@
         (list-diff (mapcar
                     (lambda (slot)
                       (let ((info (column-info-for-create-table slot)))
-                        (rplaca info (symbol-name-literally (car info)))
+                        (rplaca info (symbol-name (car info)))
                         info))
                     slots)
                    column-definitions
@@ -192,7 +193,7 @@
                  ((= pos 0) '(:first t))
                  ((null pos) nil)
                  (T (list :after
-                          (intern (symbol-name-literally (table-column-name (nth (1- pos) slots)))
+                          (intern (string (unlispify (table-column-name (nth (1- pos) slots))))
                                   :keyword)))))))
       (multiple-value-bind (new-columns modify-columns old-columns)
           (compute-migrate-table-columns class)
@@ -201,7 +202,7 @@
          (if new-columns
              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                     (mapcar (lambda (column)
-                              (rplaca column (intern (car column) :keyword))
+                              (rplaca column (intern (string (unlispify (car column))) :keyword))
                               (apply #'add-column
                                      (append column
                                              (if (eq (database-type) :postgres)
@@ -212,7 +213,7 @@
          (if modify-columns
              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                     (mapcan (lambda (column)
-                              (rplaca column (intern (car column) :keyword))
+                              (rplaca column (intern (string (unlispify (car column))) :keyword))
                               (cond
                                 ((eq (database-type) :postgres)
                                  (list
@@ -231,7 +232,8 @@
          (if old-columns
              (apply #'make-statement :alter-table (intern (table-name class) :keyword)
                     (mapcar (lambda (column)
-                              (drop-column (intern (car column) :keyword))) old-columns))
+                              (drop-column (intern (string (unlispify (car column))) :keyword)))
+                            old-columns))
              nil))))))
 
 (defun %generate-migration-sql-for-sqlite3 (class)
@@ -251,7 +253,8 @@
                                     (intern (car column) :keyword))
                                   column-definitions))
             (slot-names (mapcar (lambda (slot)
-                                  (intern (symbol-name-literally (table-column-name slot))
+                                  (intern (symbol-name
+                                           (unlispify (table-column-name slot)))
                                           :keyword))
                                 (database-column-slots class)))
             (same (list-diff column-names slot-names)))
