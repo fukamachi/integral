@@ -42,11 +42,11 @@
    (not-null :type boolean
              :initarg :not-null
              :initform nil)
-   (inflate :type function
+   (inflate :type (or cons function null)
             :initarg :inflate
             :initform nil
             :accessor inflate)
-   (deflate :type function
+   (deflate :type (or cons function null)
             :initarg :deflate
             :initform nil
             :accessor deflate)
