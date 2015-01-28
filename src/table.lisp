@@ -11,6 +11,7 @@
                 :table-column-name
                 :table-column-definition
                 :table-column-inflate
+                :table-column-deflate
                 :auto-increment-p
                 :primary-key-p
                 :ghost-slot-p
@@ -25,7 +26,8 @@
                 :symbol-name-literally
                 :class-inherit-p
                 :lispify
-                :unlispify)
+                :unlispify
+                :get-slot-by-slot-name)
   (:import-from :closer-mop
                 :validate-superclass
                 :ensure-class-using-class
@@ -55,14 +57,18 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric inflate (object slot-name value)
   (:method ((object <dao-class>) slot-name value)
-    (declare (ignore object slot-name))
-    value))
+    (let ((slot (get-slot-by-slot-name object slot-name)))
+      (if (table-column-inflate slot)
+          (funcall (table-column-inflate slot) value)
+          value))))
 
 @export
 (defgeneric deflate (object slot-name value)
   (:method ((object <dao-class>) slot-name value)
-    (declare (ignore object slot-name))
-    value))
+    (let ((slot (get-slot-by-slot-name object slot-name)))
+      (if (table-column-deflate slot)
+          (funcall (table-column-deflate slot) value)
+          value))))
 
 (defmethod print-object ((object <dao-class>) stream)
   (let* ((table-class (class-of object))
@@ -405,11 +411,10 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (loop with undef = '#:undef
             for column in (database-column-slots class)
             for column-name = (lispify (c2mop:slot-definition-name column))
-            for inflate-fn = (table-column-inflate column)
             for val = (getf initargs (intern (symbol-name column-name) :keyword)
                             undef)
             unless (eq val undef)
               do (setf (slot-value obj column-name)
-                       (if inflate-fn (funcall inflate-fn val) (inflate obj column-name val))))
+                       (inflate obj column-name val)))
       (setf (dao-synced obj) T)
       obj)))

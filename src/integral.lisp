@@ -57,7 +57,8 @@
                 :*auto-migration-mode*)
   (:import-from :integral.util
                 :lispify
-                :unlispify)
+                :unlispify
+                :get-slot-by-slot-name)
   (:import-from :sxql.sql-type
                 :sql-statement)
   (:import-from :alexandria
@@ -123,14 +124,11 @@
   (apply #'set=
          (mapcan
           #'(lambda (slot)
-              (let ((slot-name (c2mop:slot-definition-name slot))
-                    (deflate-fn (table-column-deflate slot)))
+              (let ((slot-name (c2mop:slot-definition-name slot)))
                 (if (slot-boundp obj slot-name)
                     (let ((value (slot-value obj slot-name)))
                       (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                            (if deflate-fn
-                                (funcall deflate-fn value)
-                                (deflate obj slot-name value))))
+                            (deflate obj slot-name value)))
                     nil)))
           (database-column-slots (class-of obj)))))
 
