@@ -114,9 +114,8 @@ Note this can be applied for a list of string-designators."
 
 @export
 (defun get-slot-by-slot-name (obj slot-name)
-  (let ((found (remove-if-not #'(lambda (slot)
-                     (string-equal (c2mop:slot-definition-name slot) slot-name))
-                 (c2mop:class-direct-slots (if (typep obj 'symbol)
-                                        (find-class obj)
-                                        (class-of obj))))))
-    (when found (car found))))
+  (find-if #'(lambda (slot)
+               (string-equal (c2mop:slot-definition-name slot) slot-name))
+           (c2mop:class-direct-slots (if (typep obj 'symbol)
+                                         (find-class obj)
+                                         (class-of obj)))))
