@@ -115,15 +115,18 @@
 
 (defmethod make-insert-sql ((obj <dao-class>))
   (insert-into (intern (table-name obj) :keyword)
-    (apply #'set=
-           (mapcan
-            #'(lambda (slot-name)
-                (if (slot-boundp obj slot-name)
+      (make-set-clause obj)))
+
+(defun make-set-clause (obj)
+  (apply #'set=
+         (mapcan
+          #'(lambda (slot-name)
+              (if (slot-boundp obj slot-name)
+                  (let ((value (slot-value obj slot-name)))
                     (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                          (deflate obj slot-name
-                            (slot-value obj slot-name)))
-                    nil))
-            (database-column-slot-names (class-of obj))))))
+                          (deflate obj slot-name value)))
+                  nil))
+          (database-column-slot-names (class-of obj)))))
 
 @export
 (defmethod insert-dao ((obj <dao-class>))
@@ -153,15 +156,7 @@
              :table-name (table-name obj)))
 
     (update (intern (table-name obj) :keyword)
-      (apply #'set=
-             (mapcan
-              #'(lambda (slot-name)
-                  (if (slot-boundp obj slot-name)
-                      (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                            (deflate obj slot-name
-                              (slot-value obj slot-name)))
-                      nil))
-              (database-column-slot-names (class-of obj))))
+      (make-set-clause obj)
       (where
        `(:and ,@(mapcar #'(lambda (key)
                             `(:= ,(unlispify key) ,(slot-value obj key)))

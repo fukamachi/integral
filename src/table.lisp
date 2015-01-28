@@ -10,6 +10,8 @@
   (:import-from :integral.column
                 :table-column-name
                 :table-column-definition
+                :table-column-inflate
+                :table-column-deflate
                 :auto-increment-p
                 :primary-key-p
                 :ghost-slot-p
@@ -24,7 +26,8 @@
                 :symbol-name-literally
                 :class-inherit-p
                 :lispify
-                :unlispify)
+                :unlispify
+                :get-slot-by-slot-name)
   (:import-from :closer-mop
                 :validate-superclass
                 :ensure-class-using-class
@@ -54,14 +57,18 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric inflate (object slot-name value)
   (:method ((object <dao-class>) slot-name value)
-    (declare (ignore object slot-name))
-    value))
+    (let ((slot (get-slot-by-slot-name object slot-name)))
+      (if (table-column-inflate slot)
+          (funcall (table-column-inflate slot) value)
+          value))))
 
 @export
 (defgeneric deflate (object slot-name value)
   (:method ((object <dao-class>) slot-name value)
-    (declare (ignore object slot-name))
-    value))
+    (let ((slot (get-slot-by-slot-name object slot-name)))
+      (if (table-column-deflate slot)
+          (funcall (table-column-deflate slot) value)
+          value))))
 
 (defmethod print-object ((object <dao-class>) stream)
   (let* ((table-class (class-of object))
