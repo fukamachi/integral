@@ -42,11 +42,11 @@
    (not-null :type boolean
              :initarg :not-null
              :initform nil)
-   (inflate :type (or cons function null)
+   (inflate :type (or function null)
             :initarg :inflate
             :initform nil
             :accessor inflate)
-   (deflate :type (or cons function null)
+   (deflate :type (or function null)
             :initarg :deflate
             :initform nil
             :accessor deflate)
@@ -56,15 +56,16 @@
           :accessor ghost-slot-p
           :documentation "Option to specify slots as ghost slots. Ghost slots do not depend on a database.")))
 
+(defmethod initialize-instance :around ((column table-column-definition) &rest initargs)
+  (when (getf initargs :inflate) (setf initargs (append (list :inflate (eval (getf initargs :inflate))) initargs)))
+  (when (getf initargs :deflate) (setf initargs (append (list :deflate (eval (getf initargs :deflate))) initargs)))
+  (apply #'call-next-method column initargs))
+
 (defmethod initialize-instance :after ((column table-column-definition) &key)
   (when (eq (table-column-type column) 'serial)
     (setf (auto-increment-p column) t))
   (when (primary-key-p column)
-    (setf (slot-value column 'not-null) t))
-  (when (slot-value column 'inflate)
-    (setf (slot-value column 'inflate) (eval (slot-value column 'inflate))))
-  (when (slot-value column 'deflate)
-    (setf (slot-value column 'deflate) (eval (slot-value column 'deflate)))))
+    (setf (slot-value column 'not-null) t)))
 
 (defgeneric table-column-name (column)
   (:method ((column table-column-definition))
