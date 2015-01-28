@@ -18,8 +18,6 @@
                 :initialize-dao-table-class
                 :dao-synced
                 :make-dao-instance)
-  (:import-from :integral.column
-                :table-column-deflate)
   (:import-from :integral.database
                 :retrieve-by-raw-sql
                 :execute-sql)
@@ -57,8 +55,7 @@
                 :*auto-migration-mode*)
   (:import-from :integral.util
                 :lispify
-                :unlispify
-                :get-slot-by-slot-name)
+                :unlispify)
   (:import-from :sxql.sql-type
                 :sql-statement)
   (:import-from :alexandria
