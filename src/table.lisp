@@ -409,8 +409,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((obj (make-instance class)))
       ;; Ignore columns which is not defined in defclass as a slot.
       (loop with undef = '#:undef
-            for column in (database-column-slots class)
-            for column-name = (lispify (c2mop:slot-definition-name column))
+            for column-name in (database-column-slot-names class)
             for val = (getf initargs (intern (symbol-name column-name) :keyword)
                             undef)
             unless (eq val undef)

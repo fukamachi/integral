@@ -10,7 +10,7 @@
                 :table-definition
                 :table-serial-key
                 :table-primary-key
-                :database-column-slots
+                :database-column-slot-names
                 :ensure-table-exists
                 :recreate-table
                 :inflate
@@ -123,14 +123,13 @@
 (defun make-set-clause (obj)
   (apply #'set=
          (mapcan
-          #'(lambda (slot)
-              (let ((slot-name (c2mop:slot-definition-name slot)))
-                (if (slot-boundp obj slot-name)
-                    (let ((value (slot-value obj slot-name)))
-                      (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                            (deflate obj slot-name value)))
-                    nil)))
-          (database-column-slots (class-of obj)))))
+          #'(lambda (slot-name)
+              (if (slot-boundp obj slot-name)
+                  (let ((value (slot-value obj slot-name)))
+                    (list (intern (symbol-name (unlispify slot-name)) :keyword)
+                          (deflate obj slot-name value)))
+                  nil))
+          (database-column-slot-names (class-of obj)))))
 
 @export
 (defmethod insert-dao ((obj <dao-class>))
