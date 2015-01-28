@@ -163,11 +163,10 @@
 
     (update (intern (table-name obj) :keyword)
       (make-set-clause obj)
-      (where (if (cdr primary-key)
-                 `(:and ,@(mapcar #'(lambda (key)
-                                      `(:= ,key ,(slot-value obj key)))
-                                  primary-key))
-                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
+      (where
+       `(:and ,@(mapcar #'(lambda (key)
+                            `(:= ,(unlispify key) ,(slot-value obj key)))
+                        primary-key))))))
 
 @export
 (defmethod update-dao ((obj <dao-class>))

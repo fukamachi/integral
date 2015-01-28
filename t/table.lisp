@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 26)
+(plan 28)
 
 (disconnect-toplevel)
 
@@ -219,7 +219,7 @@
    (user :type (varchar 64)
          :accessor :tweet-user
          :initarg :user)
-   (active_p :type boolean
+   (active-p :type boolean
              :accessor :tweet-active-p
              :initarg :active-p
              :inflate #'(lambda (value) (if (= value 0) nil t))
@@ -231,9 +231,9 @@
 
 (let ((tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t)))
   (save-dao tweet)
-  (is (getf (car (retrieve-by-sql "SELECT active_p FROM tweets LIMIT 1")) :|active_p|)
+  (is (getf (car (retrieve-by-sql "SELECT active_p FROM tweets LIMIT 1")) :active-p)
       1)
-  (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active_p)
+  (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
       t))
 
 (finalize)
