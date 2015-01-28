@@ -46,6 +46,10 @@
             :initarg :inflate
             :initform nil
             :accessor inflate)
+   (deflate :type function
+            :initarg :deflate
+            :initform nil
+            :accessor deflate)
    (ghost :type boolean
           :initarg :ghost
           :initform nil
@@ -58,7 +62,9 @@
   (when (primary-key-p column)
     (setf (slot-value column 'not-null) t))
   (when (slot-value column 'inflate)
-    (setf (slot-value column 'inflate) (eval (slot-value column 'inflate)))))
+    (setf (slot-value column 'inflate) (eval (slot-value column 'inflate))))
+  (when (slot-value column 'deflate)
+    (setf (slot-value column 'deflate) (eval (slot-value column 'deflate)))))
 
 (defgeneric table-column-name (column)
   (:method ((column table-column-definition))
@@ -74,6 +80,11 @@
   (:method ((column table-column-definition))
     (when (slot-boundp column 'inflate)
       (slot-value column 'inflate))))
+
+(defgeneric table-column-deflate (column)
+  (:method ((column table-column-definition))
+    (when (slot-boundp column 'deflate)
+      (slot-value column 'deflate))))
 
 @export
 (defgeneric column-info-for-create-table (column)

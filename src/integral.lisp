@@ -10,7 +10,7 @@
                 :table-definition
                 :table-serial-key
                 :table-primary-key
-                :database-column-slot-names
+                :database-column-slots
                 :ensure-table-exists
                 :recreate-table
                 :inflate
@@ -18,6 +18,8 @@
                 :initialize-dao-table-class
                 :dao-synced
                 :make-dao-instance)
+  (:import-from :integral.column
+                :table-column-deflate)
   (:import-from :integral.database
                 :retrieve-by-raw-sql
                 :execute-sql)
@@ -115,15 +117,22 @@
 
 (defmethod make-insert-sql ((obj <dao-class>))
   (insert-into (intern (table-name obj) :keyword)
-    (apply #'set=
-           (mapcan
-            #'(lambda (slot-name)
+      (make-set-clause obj)))
+
+(defun make-set-clause (obj)
+  (apply #'set=
+         (mapcan
+          #'(lambda (slot)
+              (let ((slot-name (c2mop:slot-definition-name slot))
+                    (deflate-fn (table-column-deflate slot)))
                 (if (slot-boundp obj slot-name)
-                    (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                          (deflate obj slot-name
-                            (slot-value obj slot-name)))
-                    nil))
-            (database-column-slot-names (class-of obj))))))
+                    (let ((value (slot-value obj slot-name)))
+                      (list (intern (symbol-name (unlispify slot-name)) :keyword)
+                            (if deflate-fn
+                                (funcall deflate-fn value)
+                                (deflate obj slot-name value))))
+                    nil)))
+          (database-column-slots (class-of obj)))))
 
 @export
 (defmethod insert-dao ((obj <dao-class>))
@@ -153,19 +162,12 @@
              :table-name (table-name obj)))
 
     (update (intern (table-name obj) :keyword)
-      (apply #'set=
-             (mapcan
-              #'(lambda (slot-name)
-                  (if (slot-boundp obj slot-name)
-                      (list (intern (symbol-name (unlispify slot-name)) :keyword)
-                            (deflate obj slot-name
-                              (slot-value obj slot-name)))
-                      nil))
-              (database-column-slot-names (class-of obj))))
-      (where
-       `(:and ,@(mapcar #'(lambda (key)
-                            `(:= ,(unlispify key) ,(slot-value obj key)))
-                        primary-key))))))
+      (make-set-clause obj)
+      (where (if (cdr primary-key)
+                 `(:and ,@(mapcar #'(lambda (key)
+                                      `(:= ,key ,(slot-value obj key)))
+                                  primary-key))
+                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
 
 @export
 (defmethod update-dao ((obj <dao-class>))
