@@ -42,11 +42,24 @@
    (not-null :type boolean
              :initarg :not-null
              :initform nil)
+   (inflate :type (or function null)
+            :initarg :inflate
+            :initform nil
+            :accessor inflate)
+   (deflate :type (or function null)
+            :initarg :deflate
+            :initform nil
+            :accessor deflate)
    (ghost :type boolean
           :initarg :ghost
           :initform nil
           :accessor ghost-slot-p
           :documentation "Option to specify slots as ghost slots. Ghost slots do not depend on a database.")))
+
+(defmethod initialize-instance :around ((column table-column-definition) &rest initargs)
+  (when (getf initargs :inflate) (setf initargs (append (list :inflate (eval (getf initargs :inflate))) initargs)))
+  (when (getf initargs :deflate) (setf initargs (append (list :deflate (eval (getf initargs :deflate))) initargs)))
+  (apply #'call-next-method column initargs))
 
 (defmethod initialize-instance :after ((column table-column-definition) &key)
   (when (eq (table-column-type column) 'serial)
@@ -63,6 +76,16 @@
     (if (slot-boundp column 'col-type)
         (slot-value column 'col-type)
         (c2mop:slot-definition-type column))))
+
+(defgeneric table-column-inflate (column)
+  (:method ((column table-column-definition))
+    (when (slot-boundp column 'inflate)
+      (slot-value column 'inflate))))
+
+(defgeneric table-column-deflate (column)
+  (:method ((column table-column-definition))
+    (when (slot-boundp column 'deflate)
+      (slot-value column 'deflate))))
 
 @export
 (defgeneric column-info-for-create-table (column)

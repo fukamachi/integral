@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 26)
+(plan 28)
 
 (disconnect-toplevel)
 
@@ -206,5 +206,34 @@
                          :status "Is this okay?"
                          :user "nitro_idiot")))
   (is (tweet-user tw) "nitro_idiot"))
+
+(setf (find-class 'tweet) nil)
+
+(defclass tweet ()
+  ((id :type serial
+       :primary-key t
+       :reader tweet-id)
+   (status :type string
+           :accessor :tweet-status
+           :initarg :status)
+   (user :type (varchar 64)
+         :accessor :tweet-user
+         :initarg :user)
+   (active-p :type boolean
+             :accessor :tweet-active-p
+             :initarg :active-p
+             :inflate #'(lambda (value) (if (= value 0) nil t))
+             :deflate #'(lambda (value) (if value 1 0))))
+  (:metaclass <dao-table-class>)
+  (:table-name "tweets"))
+
+(migrate-table (find-class 'tweet))
+
+(let ((tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t)))
+  (save-dao tweet)
+  (is (getf (car (retrieve-by-sql "SELECT active_p FROM tweets LIMIT 1")) :active-p)
+      1)
+  (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
+      t))
 
 (finalize)

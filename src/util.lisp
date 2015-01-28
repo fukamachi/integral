@@ -111,3 +111,11 @@ Note this can be applied for a list of string-designators."
               (sort (copy-list b) sort-fn :key (or sort-key-b sort-key #'identity))
               :key key
               :test test))
+
+@export
+(defun get-slot-by-slot-name (obj slot-name)
+  (find-if #'(lambda (slot)
+               (string-equal (c2mop:slot-definition-name slot) slot-name))
+           (c2mop:class-direct-slots (if (typep obj 'symbol)
+                                         (find-class obj)
+                                         (class-of obj)))))
