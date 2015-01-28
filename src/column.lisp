@@ -42,6 +42,10 @@
    (not-null :type boolean
              :initarg :not-null
              :initform nil)
+   (inflate :type function
+            :initarg :inflate
+            :initform nil
+            :accessor inflate)
    (ghost :type boolean
           :initarg :ghost
           :initform nil
@@ -52,7 +56,9 @@
   (when (eq (table-column-type column) 'serial)
     (setf (auto-increment-p column) t))
   (when (primary-key-p column)
-    (setf (slot-value column 'not-null) t)))
+    (setf (slot-value column 'not-null) t))
+  (when (slot-value column 'inflate)
+    (setf (slot-value column 'inflate) (eval (slot-value column 'inflate)))))
 
 (defgeneric table-column-name (column)
   (:method ((column table-column-definition))
@@ -63,6 +69,11 @@
     (if (slot-boundp column 'col-type)
         (slot-value column 'col-type)
         (c2mop:slot-definition-type column))))
+
+(defgeneric table-column-inflate (column)
+  (:method ((column table-column-definition))
+    (when (slot-boundp column 'inflate)
+      (slot-value column 'inflate))))
 
 @export
 (defgeneric column-info-for-create-table (column)

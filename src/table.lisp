@@ -10,6 +10,7 @@
   (:import-from :integral.column
                 :table-column-name
                 :table-column-definition
+                :table-column-inflate
                 :auto-increment-p
                 :primary-key-p
                 :ghost-slot-p
@@ -54,7 +55,6 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defgeneric inflate (object slot-name value)
   (:method ((object <dao-class>) slot-name value)
-    (declare (ignore object slot-name))
     value))
 
 @export
@@ -402,11 +402,13 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((obj (make-instance class)))
       ;; Ignore columns which is not defined in defclass as a slot.
       (loop with undef = '#:undef
-            for column-name in (mapcar #'lispify (database-column-slot-names class))
+            for column in (database-column-slots class)
+            for column-name = (lispify (c2mop:slot-definition-name column))
+            for inflate-fn = (table-column-inflate column)
             for val = (getf initargs (intern (symbol-name column-name) :keyword)
                             undef)
             unless (eq val undef)
               do (setf (slot-value obj column-name)
-                       (inflate obj column-name val)))
+                       (if inflate-fn (funcall inflate-fn val) (inflate obj column-name val))))
       (setf (dao-synced obj) T)
       obj)))
