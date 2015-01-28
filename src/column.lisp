@@ -9,6 +9,8 @@
                 :serial)
   (:import-from :integral.error
                 :<type-missing-error>)
+  (:import-from :integral.util
+                :unlispify)
   (:import-from :closer-mop
                 :standard-direct-slot-definition
                 :standard-slot-definition
@@ -54,7 +56,7 @@
 
 (defgeneric table-column-name (column)
   (:method ((column table-column-definition))
-    (c2mop:slot-definition-name column)))
+    (unlispify (c2mop:slot-definition-name column))))
 
 (defgeneric table-column-type (column)
   (:method ((column table-column-definition))

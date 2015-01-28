@@ -43,7 +43,7 @@
        :reader tweet-id)
    (user :type (varchar 64)
          :accessor :tweet-user)
-   (created_at :type (char 8)))
+   (created-at :type (char 8)))
   (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
@@ -64,7 +64,7 @@
        :reader tweet-id)
    (user :type (varchar 128)
          :accessor :tweet-user)
-   (created_at :type (char 8)))
+   (created-at :type (char 8)))
   (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
@@ -86,10 +86,10 @@
        :reader tweet-id)
    (user :type (varchar 128)
          :accessor :tweet-user)
-   (created_at :type (char 8)))
+   (created-at :type (char 8)))
   (:metaclass <dao-table-class>)
   (:table-name "tweets")
-  (:unique-keys (user created_at)))
+  (:unique-keys (user created-at)))
 
 (migrate-table (find-class 'tweet))
 
@@ -103,10 +103,10 @@
        :reader tweet-id)
    (user :type (varchar 128)
          :accessor :tweet-user)
-   (created_at :type (char 8)))
+   (created-at :type (char 8)))
   (:metaclass <dao-table-class>)
   (:table-name "tweets")
-  (:unique-keys (id user created_at)))
+  (:unique-keys (id user created-at)))
 
 (migrate-table (find-class 'tweet))
 
@@ -120,11 +120,11 @@
        :reader tweet-id)
    (user :type (varchar 128)
          :accessor :tweet-user)
-   (created_at :type (char 8)))
+   (created-at :type (char 8)))
   (:metaclass <dao-table-class>)
   (:table-name "tweets")
   (:unique-keys)
-  (:keys (user created_at)))
+  (:keys (user created-at)))
 
 (migrate-table (find-class 'tweet))
 

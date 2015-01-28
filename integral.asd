@@ -23,6 +23,7 @@
                :closer-mop
                :split-sequence
                :group-by
+               :iterate
                :alexandria
                :trivial-types)
   :components ((:module "src"

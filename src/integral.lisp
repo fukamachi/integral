@@ -1,7 +1,8 @@
 (in-package :cl-user)
 (defpackage integral
   (:use :cl
-        :sxql)
+        :sxql
+        :iterate)
   (:import-from :integral.table
                 :<dao-table-class>
                 :<dao-class>
@@ -53,7 +54,8 @@
   (:import-from :integral.variable
                 :*auto-migration-mode*)
   (:import-from :integral.util
-                :symbol-name-literally)
+                :lispify
+                :unlispify)
   (:import-from :sxql.sql-type
                 :sql-statement)
   (:import-from :alexandria
@@ -117,7 +119,7 @@
            (mapcan
             #'(lambda (slot-name)
                 (if (slot-boundp obj slot-name)
-                    (list (intern (symbol-name slot-name) :keyword)
+                    (list (intern (symbol-name (unlispify slot-name)) :keyword)
                           (deflate obj slot-name
                             (slot-value obj slot-name)))
                     nil))
@@ -131,7 +133,7 @@
                (if serial-key
                    (last-insert-id (get-connection)
                                    (table-name obj)
-                                   (string-downcase serial-key))
+                                   (unlispify serial-key))
                    nil)))
       (when sqlite3-p
         (let ((pk-value (get-pk-value)))
@@ -155,16 +157,15 @@
              (mapcan
               #'(lambda (slot-name)
                   (if (slot-boundp obj slot-name)
-                      (list (intern (symbol-name slot-name) :keyword)
+                      (list (intern (symbol-name (unlispify slot-name)) :keyword)
                             (deflate obj slot-name
                               (slot-value obj slot-name)))
                       nil))
               (database-column-slot-names (class-of obj))))
-      (where (if (cdr primary-key)
-                 `(:and ,@(mapcar #'(lambda (key)
-                                      `(:= ,key ,(slot-value obj key)))
-                                  primary-key))
-                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
+      (where
+       `(:and ,@(mapcar #'(lambda (key)
+                            `(:= ,(unlispify key) ,(slot-value obj key)))
+                        primary-key))))))
 
 @export
 (defmethod update-dao ((obj <dao-class>))
@@ -177,11 +178,9 @@
              :table-name (table-name obj)))
 
     (delete-from (intern (table-name obj) :keyword)
-      (where (if (cdr primary-key)
-                 `(:and ,@(mapcar #'(lambda (key)
-                                      `(:= ,key ,(slot-value obj key)))
-                                  primary-key))
-                 `(:= ,(car primary-key) ,(slot-value obj (car primary-key))))))))
+      (where `(:and ,@(mapcar #'(lambda (key)
+                                  `(:= ,(unlispify key) ,(slot-value obj key)))
+                              primary-key))))))
 
 @export
 (defmethod delete-dao ((obj <dao-class>))
@@ -212,12 +211,10 @@
 
     (select :*
       (from (intern (table-name class) :keyword))
-      (where (if (cdr primary-key)
-                 `(:and ,@(mapcar #'(lambda (key val)
-                                      `(:= ,key ,val))
-                                  primary-key
-                                  pk-values))
-                 `(:= ,(car primary-key) ,(car pk-values))))
+      (where `(:and ,@(mapcar #'(lambda (key val)
+                                  `(:= ,(unlispify key) ,val))
+                              primary-key
+                              pk-values)))
       (limit 1))))
 
 @export
@@ -248,6 +245,12 @@
 @export
 (defmethod retrieve-by-sql ((sql string) &key binds as)
   (let ((results (retrieve-by-raw-sql sql binds)))
+    (setf results
+          (iter (for result in results)
+            (collect
+                (iter (for (column value) on result by #'cddr)
+                  (collect (lispify column))
+                  (collect value)))))
     (if as
         (mapcar (lambda (result)
                   (apply #'make-dao-instance as result))

@@ -40,6 +40,20 @@
       (string-downcase symbol)))
 
 @export
+(defun lispify (object)
+  (etypecase object
+    (symbol (intern (lispify (string-upcase object))
+                    (symbol-package object)))
+    (string (substitute #\- #\_ object))))
+
+@export
+(defun unlispify (object)
+  (etypecase object
+    (symbol (intern (unlispify (symbol-name-literally object))
+                    (symbol-package object)))
+    (string (substitute #\_ #\- object))))
+
+@export
 (defun class-inherit-p (target parent)
   (not (null
         (member parent

@@ -22,7 +22,9 @@
                 :*auto-migration-mode*)
   (:import-from :integral.util
                 :symbol-name-literally
-                :class-inherit-p)
+                :class-inherit-p
+                :lispify
+                :unlispify)
   (:import-from :closer-mop
                 :validate-superclass
                 :ensure-class-using-class
@@ -197,7 +199,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:method ((class <dao-table-class>))
     (if (slot-value class 'table-name)
         (string (car (slot-value class 'table-name)))
-        (let ((class-name (symbol-name-literally (class-name class))))
+        (let ((class-name (lispify (symbol-name-literally (class-name class)))))
           (if (and (char= (aref class-name 0) #\<)
                    (char= (aref class-name (1- (length class-name))) #\>))
               (subseq class-name 1 (1- (length class-name)))
@@ -256,11 +258,21 @@ If you want to use another class, specify it as a superclass in the usual way.")
                                              (slot-value class 'primary-key)))
                                 nil)
                             (if (slot-boundp class 'unique-keys)
-                                (mapcar #'sxql:unique-key (slot-value class 'unique-keys))
+                                (mapcar (lambda (key)
+                                          (sxql:unique-key
+                                           (if (consp key)
+                                               (mapcar #'unlispify key)
+                                               (unlispify key))))
+                                        (slot-value class 'unique-keys))
                                 nil)
                             (if (and (slot-boundp class 'keys)
                                      (not sqlite3-p)) ;; ignoring :keys when using SQLite3
-                                (mapcar #'sxql:index-key (slot-value class 'keys))
+                                (mapcar (lambda (key)
+                                          (sxql:index-key
+                                           (if (consp key)
+                                               (mapcar #'unlispify key)
+                                               (unlispify key))))
+                                        (slot-value class 'keys))
                                 nil)))))
         (if yield
             (yield query)
@@ -278,14 +290,17 @@ If you want to use another class, specify it as a superclass in the usual way.")
      (if (slot-boundp class 'primary-key)
          (list (list :unique-key t
                      :primary-key t
-                     :columns (mapcar #'symbol-name-literally
+                     :columns (mapcar (lambda (key)
+                                        (symbol-name (unlispify key)))
                                       (ensure-list (car (slot-value class 'primary-key))))))
          nil)
      (if (slot-boundp class 'unique-keys)
          (mapcar (lambda (key)
                    (list :unique-key t
                          :primary-key nil
-                         :columns (mapcar #'symbol-name-literally (ensure-list key))))
+                         :columns (mapcar (lambda (key)
+                                            (symbol-name (unlispify key)))
+                                          (ensure-list key))))
                  (slot-value class 'unique-keys))
          nil)
      (if (and (slot-boundp class 'keys)
@@ -293,7 +308,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
          (mapcar (lambda (key)
                    (list :unique-key nil
                          :primary-key nil
-                         :columns (mapcar #'symbol-name-literally (ensure-list key))))
+                         :columns (mapcar (lambda (key)
+                                            (symbol-name (unlispify key)))
+                                          (ensure-list key))))
                  (slot-value class 'keys))
          nil))))
 
@@ -352,13 +369,12 @@ If you want to use another class, specify it as a superclass in the usual way.")
          (mapcar #'slot-definition-to-plist (c2mop:class-direct-slots class))
          (mapcar (lambda (column)
                    (destructuring-bind (name &key type not-null primary-key auto-increment &allow-other-keys) column
-                     (let* ((name-string (string-upcase name))
-                            (accessor-fn (intern (format nil "~A-~A" (class-name class)
-                                                         (substitute #\- #\_ name-string))
+                     (let* ((name (lispify (string-upcase name)))
+                            (accessor-fn (intern (format nil "~A-~A" (class-name class) name)
                                                  package)))
-                       (list :name (intern name-string package)
+                       (list :name (intern name package)
                              :col-type type
-                             :initargs (list (intern name-string :keyword))
+                             :initargs (list (intern name :keyword))
                              :not-null not-null
                              :auto-increment auto-increment
                              :primary-key primary-key
@@ -386,8 +402,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((obj (make-instance class)))
       ;; Ignore columns which is not defined in defclass as a slot.
       (loop with undef = '#:undef
-            for column-name in (database-column-slot-names class)
-            for val = (getf initargs (intern (symbol-name-literally column-name) :keyword)
+            for column-name in (mapcar #'lispify (database-column-slot-names class))
+            for val = (getf initargs (intern (symbol-name column-name) :keyword)
                             undef)
             unless (eq val undef)
               do (setf (slot-value obj column-name)
