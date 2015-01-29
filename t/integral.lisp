@@ -44,13 +44,13 @@
     (setf (slot-value tweet 'id) 1)
 
     (is (sxql:yield (make-update-sql tweet))
-        "UPDATE `tweets` SET `id` = 1, `status` = 'This is the first tweet. Yay.', `user` = 'nitro_idiot' WHERE ((`id` = 1))")
+        "UPDATE `tweets` SET `id` = 1, `status` = 'This is the first tweet. Yay.', `user` = 'nitro_idiot' WHERE (`id` = 1)")
 
     (is (sxql:yield (make-delete-sql tweet))
-        "DELETE FROM `tweets` WHERE ((`id` = 1))")
+        "DELETE FROM `tweets` WHERE (`id` = 1)")
 
     (is (sxql:yield (make-find-sql (find-class 'tweet) 1))
-        "SELECT * FROM `tweets` WHERE ((`id` = 1)) LIMIT 1")))
+        "SELECT * FROM `tweets` WHERE (`id` = 1) LIMIT 1")))
 
 (connect-to-testdb)
 
