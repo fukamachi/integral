@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 67)
+(plan 70)
 
 (disconnect-toplevel)
 
@@ -240,25 +240,38 @@
                  :accessor tweet-created-at
                  :initarg :created-at
                  :inflate #'local-time:universal-to-timestamp
-                 :deflate #'local-time:timestamp-to-universal))
+                 :deflate #'local-time:timestamp-to-universal)
+     (tags :type cons
+           :col-type (varchar 255)
+           :accessor tweet-tags
+           :initarg :tags))
     (:metaclass <dao-table-class>)
     (:table-name "tweets"))
 
   (migrate-table (find-class 'tweet))
 
+  (defmethod type-inflate ((type (eql 'cons)) value)
+    (split-sequence:SPLIT-SEQUENCE #\, value :remove-empty-subseqs t))
+
+  (defmethod type-deflate ((type (eql 'cons)) value)
+    (format nil "~{~A~^,~}" value))
+
   (let* ((now (local-time:now))
-         (tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t :created-at now)))
+         (tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t :created-at now :tags '("common" "lisp"))))
     (save-dao tweet)
     (if (eq driver :postgres)
         ;; cl-postgres converts boolean values into T or NIL, instead of 1 or 0.
-        (is (car (retrieve-by-sql "SELECT active_p, created_at FROM tweets LIMIT 1"))
-            `(:active-p t :created-at ,(local-time:timestamp-to-universal now)))
-        (is (car (retrieve-by-sql "SELECT active_p, created_at FROM tweets LIMIT 1"))
-            `(:active-p 1 :created-at ,(local-time:timestamp-to-universal now))))
-    (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
-        t)
-    (is-type (slot-value (find-dao 'tweet (tweet-id tweet)) 'created-at)
-             'local-time:timestamp)
+        (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
+            `(:active-p t :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp"))
+        (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
+            `(:active-p 1 :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp")))
+    (let ((found (find-dao 'tweet (tweet-id tweet))))
+      (is (slot-value found 'active-p)
+          t)
+      (is (slot-value found 'tags)
+          '("common" "lisp"))
+      (is-type (slot-value found 'created-at)
+               'local-time:timestamp))
 
     ;; SQLite3/MySQL allow a value other than 0 or 1 for a boolean column.
     (unless (eq driver :postgres)
