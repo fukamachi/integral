@@ -115,28 +115,3 @@
             (group-by-plist-key (dbi:fetch-all query)
                                 :key :|index_name|
                                 :test #'string=))))
-
-(defvar *sequence-name-cache* (make-hash-table :test 'equal))
-
-(defun default-sequence-name (conn table-name serial-key-name)
-  (let ((cache (gethash table-name *sequence-name-cache*)))
-    (when (and cache
-               (gethash serial-key-name cache))
-      (return-from default-sequence-name
-        (gethash serial-key-name cache))))
-
-  (let* ((sql (format nil "SELECT pg_get_serial_sequence('~A', '~A')"
-                      table-name serial-key-name))
-         (sequence-name
-           (handler-case (getf (dbi:fetch
-                                (dbi:execute
-                                 (dbi:prepare conn sql)))
-                               :|pg_get_serial_sequence|)
-             (<dbi-programming-error> ()
-               (format nil "~A_~A_seq" table-name serial-key-name)))))
-    (symbol-macrolet ((cache (gethash table-name *sequence-name-cache*)))
-      (unless cache
-        (setf cache (make-hash-table :test 'equal)))
-      (setf (gethash serial-key-name cache) sequence-name))
-
-    sequence-name))
