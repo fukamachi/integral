@@ -288,10 +288,10 @@ Although Integral doesn't have a specific feature for relations like `:has-a` an
 (import 'integral:retrieve-by-sql)
 
 (retrieve-by-sql "SELECT * FROM user")
-;=> ((:|%oid| 1 :|name| "深町英太郎"
-;     :|profile| "I love Common Lisp and beer")
-;    (:|%oid| 2 :|name| "Tomohiro Matsuyama"
-;     :|profile| NIL))
+;=> ((:%oid 1 :name "深町英太郎"
+;     :profile "I love Common Lisp and beer")
+;    (:%oid 2 :name "Tomohiro Matsuyama"
+;     :profile NIL))
 ```
 
 `retrieve-by-sql` takes `:as` keyword argument to specify a class of the result record.
