@@ -167,10 +167,13 @@
                     slots)
                    column-definitions
                    :sort-key #'car
-                   :test (lambda (a b)
-                           (and (string= (car a) (car b))
-                                (is-type-equal (third a) (third b))
-                                (equal (cdddr a) (cdddr b)))))
+                   :test (lambda (slot-def column-def)
+                           (and (string= (car slot-def) (car column-def))
+                                (or (is-type-equal (third slot-def) (third column-def))
+                                    (and (eq (database-type) :mysql)
+                                         (is-type-equal (third slot-def) :boolean)
+                                         (is-type-equal (third column-def) '(:tinyint 1))))
+                                (equal (cdddr slot-def) (cdddr column-def)))))
       (declare (ignore same))
       (multiple-value-bind (modify add drop)
           (list-diff new old :sort-key #'car :key #'car :test #'string=)

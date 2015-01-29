@@ -12,7 +12,7 @@
                 :table-definition))
 (in-package :integral-test.migration.mysql)
 
-(plan 27)
+(plan 28)
 
 (disconnect-toplevel)
 
@@ -192,6 +192,25 @@
 (migrate-table (find-class 'tweet))
 
 (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    '(nil nil nil))
+
+(setf (find-class 'tweet) nil)
+
+(defclass tweet ()
+  ((id :type bigint
+       :auto-increment t
+       :primary-key t
+       :reader tweet-id)
+   (user :type (varchar 128)
+         :accessor :tweet-user)
+   (active-p :type boolean
+             :accessor :tweet-active-p))
+   (:metaclass <dao-table-class>)
+   (:table-name "tweets"))
+
+(migrate-table (find-class 'tweet))
+
+(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
     '(nil nil nil))
 
 (defmacro define-migration-test (before after &rest migration-sqls)
