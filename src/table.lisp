@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage integral.table
-  (:use :cl)
+  (:use :cl
+        :iterate)
   (:import-from :integral.connection
                 :get-connection
                 :connected-p
@@ -406,6 +407,52 @@ If you want to use another class, specify it as a superclass in the usual way.")
 
     (setf (initializedp class) t)
     class))
+
+@export
+(defun generate-defclass (class)
+  (check-type class <dao-table-class>)
+  `(defclass ,(class-name class) ,(remove '<dao-class>
+                                   (mapcar #'class-name (c2mop:class-direct-superclasses class))
+                                   :test #'eq)
+     ,(iter (for slot in (database-column-slots class))
+        (let ((slot-plist (slot-definition-to-plist slot)))
+          (collect
+              (cons
+               (getf slot-plist :name)
+               (append
+                (iter (for (key val) on slot-plist by #'cddr)
+                  (case key
+                    (:type (unless (eq val t)
+                             (collect :type)
+                             (collect val)))
+                    ((:initform :initfunction :col-type :primary-key :auto-increment :not-null :inflate :deflate)
+                     (when val
+                       (collect key)
+                       (collect val)))))
+                (destructuring-bind (&key readers writers &allow-other-keys) slot-plist
+                  (if (and (null (cdr readers))
+                           (null (cdr writers))
+                           (consp (car writers))
+                           (eq (caar writers) 'setf)
+                           (equal (list (car readers))
+                                  (cdar writers)))
+                      `(:accessor ,@readers)
+                      `(:readers ,@readers
+                        :writers ,@writers))))))))
+     (:metaclass <dao-table-class>)
+     ,@(and (slot-boundp class 'primary-key)
+            (slot-value class 'primary-key)
+            `((:primary-key ,@(slot-value class 'primary-key))))
+     ,@(and (slot-boundp class 'unique-keys)
+            (slot-value class 'unique-keys)
+            `((:unique-keys ,@(slot-value class 'unique-keys))))
+     ,@(and (slot-boundp class 'keys)
+            (slot-value class 'keys)
+            `((:keys ,@(slot-value class 'keys))))
+     ,@(and (slot-value class 'table-name)
+            `((:table-name ,(car (slot-value class 'table-name)))))
+     ,@(and (not (eq (car (slot-value class 'auto-pk)) t))
+            `((:auto-pk ,(car (slot-value class 'auto-pk)))))))
 
 @export
 (defgeneric make-dao-instance (class &rest initargs)

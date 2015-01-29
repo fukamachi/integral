@@ -17,7 +17,8 @@
                 :deflate
                 :initialize-dao-table-class
                 :dao-synced
-                :make-dao-instance)
+                :make-dao-instance
+                :generate-defclass)
   (:import-from :integral.database
                 :retrieve-by-raw-sql
                 :execute-sql)
@@ -68,6 +69,7 @@
 
            :<dao-class>
            :<dao-table-class>
+           :generate-defclass
 
            :inflate
            :deflate
