@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 28)
+(plan 29)
 
 (disconnect-toplevel)
 
@@ -214,26 +214,32 @@
        :primary-key t
        :reader tweet-id)
    (status :type string
-           :accessor :tweet-status
+           :accessor tweet-status
            :initarg :status)
    (user :type (varchar 64)
-         :accessor :tweet-user
+         :accessor tweet-user
          :initarg :user)
    (active-p :type boolean
-             :accessor :tweet-active-p
-             :initarg :active-p
-             :inflate #'(lambda (value) (if (= value 0) nil t))
-             :deflate #'(lambda (value) (if value 1 0))))
+             :accessor tweet-active-p
+             :initarg :active-p)
+   (created-at :type integer
+               :accessor tweet-created-at
+               :initarg :created-at
+               :inflate #'local-time:universal-to-timestamp
+               :deflate #'local-time:timestamp-to-universal))
   (:metaclass <dao-table-class>)
   (:table-name "tweets"))
 
 (migrate-table (find-class 'tweet))
 
-(let ((tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t)))
+(let* ((now (local-time:now))
+       (tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t :created-at now)))
   (save-dao tweet)
-  (is (getf (car (retrieve-by-sql "SELECT active_p FROM tweets LIMIT 1")) :active-p)
-      1)
+  (is (car (retrieve-by-sql "SELECT active_p, created_at FROM tweets LIMIT 1"))
+      `(:active-p 1 :created-at ,(local-time:timestamp-to-universal now)))
   (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
-      t))
+      t)
+  (is-type (slot-value (find-dao 'tweet (tweet-id tweet)) 'created-at)
+           'local-time:timestamp))
 
 (finalize)

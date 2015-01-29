@@ -13,7 +13,10 @@
   :license "BSD 3-Clause"
   :depends-on (:integral
                :prove
-               :uiop)
+               :uiop
+
+               ;; for inflate/deflate testing
+               :local-time)
   :components ((:module "t"
                 :components
                 ((:file "init/sqlite3")

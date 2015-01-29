@@ -9,6 +9,7 @@
                 :retrieve-table-column-definitions-by-name)
   (:import-from :integral.column
                 :table-column-name
+                :table-column-type
                 :table-column-definition
                 :table-column-inflate
                 :table-column-deflate
@@ -60,7 +61,10 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((slot (get-slot-by-slot-name object slot-name)))
       (if (table-column-inflate slot)
           (funcall (table-column-inflate slot) value)
-          value))))
+          (case (table-column-type slot)
+            (boolean (and (integerp value)
+                          (= value 1)))
+            (otherwise value))))))
 
 @export
 (defgeneric deflate (object slot-name value)
@@ -68,7 +72,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((slot (get-slot-by-slot-name object slot-name)))
       (if (table-column-deflate slot)
           (funcall (table-column-deflate slot) value)
-          value))))
+          (case (table-column-type slot)
+            (boolean (if value 1 0))
+            (otherwise value))))))
 
 (defmethod print-object ((object <dao-class>) stream)
   (let* ((table-class (class-of object))
