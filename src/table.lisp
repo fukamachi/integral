@@ -431,33 +431,33 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defun generate-defclass (class)
   (check-type class <dao-table-class>)
   `(defclass ,(class-name class) ,(remove '<dao-class>
-                                          (mapcar #'class-name (c2mop:class-direct-superclasses class))
-                                          :test #'eq)
+                                    (mapcar #'class-name (c2mop:class-direct-superclasses class))
+                                    :test #'eq)
      ,(iter (for slot in (database-column-slots class))
-            (let ((slot-plist (slot-definition-to-plist slot)))
-              (collect
-                  (cons
-                   (getf slot-plist :name)
-                   (append
-                    (iter (for (key val) on slot-plist by #'cddr)
-                          (case key
-                            (:type (unless (eq val t)
-                                     (collect :type)
-                                     (collect val)))
-                            ((:initform :initfunction :col-type :primary-key :auto-increment :not-null :inflate :deflate)
-                             (when val
-                               (collect key)
-                               (collect val)))))
-                    (destructuring-bind (&key readers writers &allow-other-keys) slot-plist
-                      (if (and (null (cdr readers))
-                               (null (cdr writers))
-                               (consp (car writers))
-                               (eq (caar writers) 'setf)
-                               (equal (list (car readers))
-                                      (cdar writers)))
-                          `(:accessor ,@readers)
-                          `(:readers ,@readers
-                                     :writers ,@writers))))))))
+        (let ((slot-plist (slot-definition-to-plist slot)))
+          (collect
+              (cons
+               (getf slot-plist :name)
+               (append
+                (iter (for (key val) on slot-plist by #'cddr)
+                  (case key
+                    (:type (unless (eq val t)
+                             (collect :type)
+                             (collect val)))
+                    ((:initform :initfunction :col-type :primary-key :auto-increment :not-null :inflate :deflate)
+                     (when val
+                       (collect key)
+                       (collect val)))))
+                (destructuring-bind (&key readers writers &allow-other-keys) slot-plist
+                  (if (and (null (cdr readers))
+                           (null (cdr writers))
+                           (consp (car writers))
+                           (eq (caar writers) 'setf)
+                           (equal (list (car readers))
+                                  (cdar writers)))
+                      `(:accessor ,@readers)
+                      `(:readers ,@readers
+                        :writers ,@writers))))))))
      (:metaclass <dao-table-class>)
      ,@(and (slot-boundp class 'primary-key)
             (slot-value class 'primary-key)
@@ -481,11 +481,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((obj (make-instance class)))
       ;; Ignore columns which is not defined in defclass as a slot.
       (loop with undef = '#:undef
-         for column-name in (mapcar #'lispify (database-column-slot-names class))
-         for val = (getf initargs (intern (symbol-name column-name) :keyword)
-                         undef)
-         unless (eq val undef)
-         do (setf (slot-value obj column-name)
-                  (inflate obj column-name val)))
+            for column-name in (mapcar #'lispify (database-column-slot-names class))
+            for val = (getf initargs (intern (symbol-name column-name) :keyword)
+                            undef)
+            unless (eq val undef)
+            do (setf (slot-value obj column-name)
+                     (inflate obj column-name val)))
       (setf (dao-synced obj) T)
       obj)))
