@@ -222,7 +222,8 @@
    (active-p :type boolean
              :accessor tweet-active-p
              :initarg :active-p)
-   (created-at :type integer
+   (created-at :type local-time:timestamp
+               :col-type integer
                :accessor tweet-created-at
                :initarg :created-at
                :inflate #'local-time:universal-to-timestamp
