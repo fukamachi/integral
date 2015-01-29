@@ -430,6 +430,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
 @export
 (defun generate-defclass (class)
   (check-type class <dao-table-class>)
+  (unless (initializedp class)
+    (initialize-dao-table-class class))
   `(defclass ,(class-name class) ,(remove '<dao-class>
                                    (mapcar #'class-name (c2mop:class-direct-superclasses class))
                                    :test #'eq)
