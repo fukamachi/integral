@@ -249,25 +249,40 @@ If you'd like to administrate a database directly by writing raw SQLs, or wanna 
 (defclass user ()
   ((name :type string
          :initarg :name)
-   (created_at :type timestamp
-               :initarg :created_at))
+   (created-at :type timestamp
+               :col-type integer
+               :initarg :created-at))
   (:metaclass integral:<dao-table-class>))
 ;=> #<INTEGRAL.TABLE:<DAO-TABLE-CLASS> USER>
 
 (find-dao 'user 1)
 ;=> #<USER #x302001D9452D>
 
-(slot-value * 'created_at)
+(slot-value * 'created-at)
 ;=> 3599088727
 
 ;; Define inflate/deflate methods
-(defmethod integral:inflate ((object user) (slot-name (eql 'created_at)) value)
+(defmethod integral:inflate ((object user) (slot-name (eql 'created-at)) value)
   (local-time:universal-to-timestamp value))
-(defmethod integral:deflate ((object user) (slot-name (eql 'created_at)) value)
+(defmethod integral:deflate ((object user) (slot-name (eql 'created-at)) value)
   (local-time:timestamp-to-universal value))
 
-(slot-value (find-dao 'user 1) 'created_at)
+(slot-value (find-dao 'user 1) 'created-at)
 ;=> @2014-01-19T11:52:07.000000+09:00
+```
+
+You can also set `inflate` and `deflate` functions via `:inflate` or `:deflate` keywords in `defclass`.
+
+```common-lisp
+(defclass user ()
+  ((name :type string
+         :initarg :name)
+   (created-at :type timestamp
+               :col-type integer
+               :initarg :created-at
+               :inflate #'local-time:universal-to-timestamp
+               :deflate #'local-time:timestamp-to-universal))
+  (:metaclass integral:<dao-table-class>))
 ```
 
 ### Relations
