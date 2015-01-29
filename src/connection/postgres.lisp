@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage integral.connection.postgres
-  (:use :cl)
+  (:use :cl
+        :sxql)
   (:import-from :integral.type
                 :string-to-dbtype)
   (:import-from :integral.util
@@ -17,19 +18,18 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defun last-insert-id (conn table-name serial-key-name &key sequence-name)
-  (let* ((sequence-name (or sequence-name
-                            (default-sequence-name conn table-name serial-key-name)))
-         (sql (format nil "SELECT currval('~A')" sequence-name)))
-    (handler-case
-        (getf (dbi:fetch (dbi:execute (dbi:prepare conn sql)))
-              :|currval|)
-      (error (e)
-        (if (eq (type-of e)
-                (intern #.(string :object-state-error)
-                        :cl-postgres-error))
-            0
-            (error e))))))
+(defun last-insert-id (conn table-name serial-key-name)
+  (let ((serial-key (intern serial-key-name :keyword)))
+    (getf (dbi:fetch
+           (dbi:execute
+            (dbi:prepare conn
+                         (sxql:yield
+                          (select ((:as serial-key :last_insert_id))
+                            (from (intern table-name :keyword))
+                            (order-by (:desc serial-key))
+                            (limit 1))))))
+          :|last_insert_id|
+          0)))
 
 (defun get-serial-keys (conn table-name)
   (let ((query
