@@ -118,11 +118,9 @@ If no connections are established, NIL will be returned."
    conn table-name))
 
 @export
-(defun last-insert-id (conn &optional table-name serial-key-name)
+(defun last-insert-id (conn table-name serial-key-name)
   "Return the last value of a serial column."
-
-  (declare (ignorable table-name serial-key-name))
   (ecase (connection-driver-type conn)
-    (:mysql    (integral.connection.mysql:last-insert-id conn))
+    (:mysql    (integral.connection.mysql:last-insert-id conn table-name serial-key-name))
     (:postgres (integral.connection.postgres:last-insert-id conn table-name serial-key-name))
     (:sqlite3  (integral.connection.sqlite3:last-insert-id conn table-name))))

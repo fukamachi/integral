@@ -138,7 +138,7 @@
                (if serial-key
                    (last-insert-id (get-connection)
                                    (table-name obj)
-                                   (unlispify serial-key))
+                                   (symbol-name (unlispify serial-key)))
                    nil)))
       (when sqlite3-p
         (let ((pk-value (get-pk-value)))

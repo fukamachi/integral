@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage integral.connection.mysql
-  (:use :cl)
+  (:use :cl
+        :sxql)
   (:import-from :integral.type
                 :string-to-dbtype)
   (:import-from :integral.util
@@ -15,11 +16,18 @@
 (cl-syntax:use-syntax :annot)
 
 @export
-(defun last-insert-id (conn)
-  (getf (dbi:fetch
-         (dbi:execute
-          (dbi:prepare conn "SELECT LAST_INSERT_ID() AS last_insert_id")))
-        :|last_insert_id|))
+(defun last-insert-id (conn table-name serial-key-name)
+  (let ((serial-key (intern serial-key-name :keyword)))
+    (getf (dbi:fetch
+           (dbi:execute
+            (dbi:prepare conn
+                         (sxql:yield
+                          (select ((:as serial-key :last_insert_id))
+                            (from (intern table-name :keyword))
+                            (order-by (:desc serial-key))
+                            (limit 1))))))
+          :|last_insert_id|
+          0)))
 
 @export
 (defun column-definitions (conn table-name)
