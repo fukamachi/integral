@@ -15,6 +15,8 @@
                 :recreate-table
                 :inflate
                 :deflate
+                :type-inflate
+                :type-deflate
                 :initialize-dao-table-class
                 :dao-synced
                 :make-dao-instance
@@ -73,6 +75,8 @@
 
            :inflate
            :deflate
+           :type-inflate
+           :type-deflate
            :table-name
            :table-definition
            :ensure-table-exists

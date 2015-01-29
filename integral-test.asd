@@ -16,7 +16,9 @@
                :uiop
 
                ;; for inflate/deflate testing
-               :local-time)
+               :local-time
+               ;; for type-inflate/type-deflate testing
+               :split-sequence)
   :components ((:module "t"
                 :components
                 ((:file "init/sqlite3")

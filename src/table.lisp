@@ -10,7 +10,6 @@
                 :retrieve-table-column-definitions-by-name)
   (:import-from :integral.column
                 :table-column-name
-                :table-column-type
                 :table-column-definition
                 :table-column-inflate
                 :table-column-deflate
@@ -62,12 +61,10 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((slot (get-slot-by-slot-name object slot-name)))
       (if (table-column-inflate slot)
           (funcall (table-column-inflate slot) value)
-          (case (table-column-type slot)
-            (boolean (typecase value
-                       (integer (not (= value 0)))
-                       (boolean value)
-                       (otherwise (not (null value)))))
-            (otherwise value))))))
+          (let ((type (c2mop:slot-definition-type slot)))
+            (if (find-type-inflate type)
+                (type-inflate type value)
+                value))))))
 
 @export
 (defgeneric deflate (object slot-name value)
@@ -75,9 +72,29 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((slot (get-slot-by-slot-name object slot-name)))
       (if (table-column-deflate slot)
           (funcall (table-column-deflate slot) value)
-          (case (table-column-type slot)
-            (boolean (if value 1 0))
-            (otherwise value))))))
+          (let ((type (c2mop:slot-definition-type slot)))
+            (if (find-type-deflate type)
+                (type-deflate type value)
+                value))))))
+
+@export
+(defgeneric type-inflate (type value)
+  (:method ((type (eql 'boolean)) value)
+    (typecase value
+      (integer (not (= value 0)))
+      (boolean value)
+      (otherwise (not (null value))))))
+
+@export
+(defgeneric type-deflate (type value)
+  (:method ((type (eql 'boolean)) value)
+    (if value 1 0)))
+
+(defun find-type-inflate (type)
+  (find-method #'type-inflate nil `((eql ,type) t) nil))
+
+(defun find-type-deflate (type)
+  (find-method #'type-deflate nil `((eql ,type) t) nil))
 
 (defmethod print-object ((object <dao-class>) stream)
   (let* ((table-class (class-of object))
@@ -414,33 +431,33 @@ If you want to use another class, specify it as a superclass in the usual way.")
 (defun generate-defclass (class)
   (check-type class <dao-table-class>)
   `(defclass ,(class-name class) ,(remove '<dao-class>
-                                   (mapcar #'class-name (c2mop:class-direct-superclasses class))
-                                   :test #'eq)
+                                          (mapcar #'class-name (c2mop:class-direct-superclasses class))
+                                          :test #'eq)
      ,(iter (for slot in (database-column-slots class))
-        (let ((slot-plist (slot-definition-to-plist slot)))
-          (collect
-              (cons
-               (getf slot-plist :name)
-               (append
-                (iter (for (key val) on slot-plist by #'cddr)
-                  (case key
-                    (:type (unless (eq val t)
-                             (collect :type)
-                             (collect val)))
-                    ((:initform :initfunction :col-type :primary-key :auto-increment :not-null :inflate :deflate)
-                     (when val
-                       (collect key)
-                       (collect val)))))
-                (destructuring-bind (&key readers writers &allow-other-keys) slot-plist
-                  (if (and (null (cdr readers))
-                           (null (cdr writers))
-                           (consp (car writers))
-                           (eq (caar writers) 'setf)
-                           (equal (list (car readers))
-                                  (cdar writers)))
-                      `(:accessor ,@readers)
-                      `(:readers ,@readers
-                        :writers ,@writers))))))))
+            (let ((slot-plist (slot-definition-to-plist slot)))
+              (collect
+                  (cons
+                   (getf slot-plist :name)
+                   (append
+                    (iter (for (key val) on slot-plist by #'cddr)
+                          (case key
+                            (:type (unless (eq val t)
+                                     (collect :type)
+                                     (collect val)))
+                            ((:initform :initfunction :col-type :primary-key :auto-increment :not-null :inflate :deflate)
+                             (when val
+                               (collect key)
+                               (collect val)))))
+                    (destructuring-bind (&key readers writers &allow-other-keys) slot-plist
+                      (if (and (null (cdr readers))
+                               (null (cdr writers))
+                               (consp (car writers))
+                               (eq (caar writers) 'setf)
+                               (equal (list (car readers))
+                                      (cdar writers)))
+                          `(:accessor ,@readers)
+                          `(:readers ,@readers
+                                     :writers ,@writers))))))))
      (:metaclass <dao-table-class>)
      ,@(and (slot-boundp class 'primary-key)
             (slot-value class 'primary-key)
@@ -464,11 +481,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (let ((obj (make-instance class)))
       ;; Ignore columns which is not defined in defclass as a slot.
       (loop with undef = '#:undef
-            for column-name in (mapcar #'lispify (database-column-slot-names class))
-            for val = (getf initargs (intern (symbol-name column-name) :keyword)
-                            undef)
-            unless (eq val undef)
-              do (setf (slot-value obj column-name)
-                       (inflate obj column-name val)))
+         for column-name in (mapcar #'lispify (database-column-slot-names class))
+         for val = (getf initargs (intern (symbol-name column-name) :keyword)
+                         undef)
+         unless (eq val undef)
+         do (setf (slot-value obj column-name)
+                  (inflate obj column-name val)))
       (setf (dao-synced obj) T)
       obj)))
