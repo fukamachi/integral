@@ -64,7 +64,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
           (funcall (table-column-inflate slot) value)
           (case (table-column-type slot)
             (boolean (typecase value
-                       (integer (= value 1))
+                       (integer (not (= value 0)))
                        (boolean value)
                        (otherwise (not (null value)))))
             (otherwise value))))))

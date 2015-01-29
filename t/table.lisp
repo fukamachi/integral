@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 65)
+(plan 67)
 
 (disconnect-toplevel)
 
@@ -258,6 +258,13 @@
     (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
         t)
     (is-type (slot-value (find-dao 'tweet (tweet-id tweet)) 'created-at)
-             'local-time:timestamp)))
+             'local-time:timestamp)
+
+    ;; SQLite3/MySQL allow a value other than 0 or 1 for a boolean column.
+    (unless (eq driver :postgres)
+      (execute-sql
+       (sxql:update :tweets (sxql:set= :active_p 2)))
+      (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
+          t))))
 
 (finalize)
