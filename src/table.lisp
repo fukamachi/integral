@@ -457,9 +457,10 @@ If you want to use another class, specify it as a superclass in the usual way.")
                            (eq (caar writers) 'setf)
                            (equal (list (car readers))
                                   (cdar writers)))
-                      `(:accessor ,@readers)
-                      `(:readers ,@readers
-                        :writers ,@writers))))))))
+                      (mapcan (lambda (r) (list :accessor r)) readers)
+                      (append
+                       (mapcan (lambda (r) (list :reader r)) readers)
+                       (mapcan (lambda (r) (list :writer r)) writers)))))))))
      (:metaclass <dao-table-class>)
      ,@(and (slot-boundp class 'primary-key)
             (slot-value class 'primary-key)
