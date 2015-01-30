@@ -91,8 +91,7 @@
 
 (defun generate-migration-sql-for-table-indices (class)
   (when (eq (database-type) :sqlite3)
-    (return-from generate-migration-sql-for-table-indices nil))
-
+    (return-from generate-migration-sql-for-table-indices (values nil nil nil)))
   (let ((db-indices (retrieve-table-indices (get-connection)
                                             (table-name class)))
         (class-indices (table-class-indices class)))
