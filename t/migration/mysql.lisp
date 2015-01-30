@@ -12,229 +12,233 @@
                 :table-definition))
 (in-package :integral-test.migration.mysql)
 
-(plan 28)
+(plan 10)
 
 (disconnect-toplevel)
 
 (connect-to-testdb :mysql)
 
 (when (find-class 'tweet nil)
-  (setf (find-class 'tweet) nil))
-
-(defclass tweet ()
-  ((user :type (varchar 128)
-         :accessor :tweet-user))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets"))
-
+  (setf (find-class 'tweet) nil)) 
 (execute-sql "DROP TABLE IF EXISTS tweets")
-(execute-sql (table-definition 'tweet))
 
-(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil nil))
+(subtest "first definition (no explicit primary key)"
+  (defclass tweet ()
+    ((user :type (varchar 128)
+           :accessor tweet-user))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
+  (execute-sql (table-definition 'tweet))
 
-(when (find-class 'tweet nil)
-  (setf (find-class 'tweet) nil))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)
+      "No migration at first"))
 
-(defclass tweet ()
-  ((id :type serial
-       :primary-key t
-       :reader tweet-id)
-   (status :type string
-           :accessor :tweet-status)
-   (user :type (varchar 64)
-         :accessor :tweet-user))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets"))
+(subtest "redefinition as the same"
+  (defclass tweet ()
+    ((user :type (varchar 128)
+           :accessor tweet-user))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
 
-(execute-sql "DROP TABLE IF EXISTS tweets")
-(execute-sql (table-definition 'tweet))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)
+      "No migration at first"))
 
-(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil nil))
+(subtest "redefinition with :auto-pk nil"
+  (defclass tweet ()
+    ((user :type (varchar 128)
+           :accessor tweet-user))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets")
+    (:auto-pk nil))
 
-(defclass tweet ()
-  ((id :type serial
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 64)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets"))
+  (multiple-value-bind (new modify old)
+      (compute-migrate-table-columns (find-class 'tweet))
+    (is new nil)
+    (is modify nil)
+    (is old '(("%oid" :type (:bigint 20 :unsigned) :auto-increment t :primary-key t :not-null t)))))
 
-(multiple-value-bind (new modify old)
-    (compute-migrate-table-columns (find-class 'tweet))
-  (is (mapcar #'car new) '("created_at"))
-  (is modify nil)
-  (is (mapcar #'car old) '("status")))
+(subtest "redefinition (with explicit primary key)"
+  (defclass tweet ()
+    ((id :type serial
+         :primary-key t
+         :reader tweet-id)
+     (status :type string
+             :accessor :tweet-status)
+     (user :type (varchar 64)
+           :accessor :tweet-user))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
 
-(is (car (make-migration-sql (find-class 'tweet)))
-    "ALTER TABLE tweets DROP COLUMN status")
+  (multiple-value-bind (new modify old)
+      (compute-migrate-table-columns (find-class 'tweet))
+    (is new '(("id" :type :integer :auto-increment t :primary-key t :not-null t)
+              ("status" :type :text :auto-increment nil :primary-key nil :not-null nil)))
+    (is modify '(("user" :type (:varchar 64) :auto-increment nil :primary-key nil :not-null nil)))
+    (is old '(("%oid" :type (:bigint 20 :unsigned) :auto-increment t :primary-key t :not-null t))))
 
-(migrate-table (find-class 'tweet))
+  (is (make-migration-sql (find-class 'tweet))
+      (list "ALTER TABLE tweets DROP COLUMN %oid"
+            "ALTER TABLE tweets MODIFY COLUMN user VARCHAR(64)"
+            "ALTER TABLE tweets ADD COLUMN id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST, ADD COLUMN status TEXT AFTER id"))
 
-(is (compute-migrate-table-columns (find-class 'tweet))
-    NIL)
+  (migrate-table (find-class 'tweet))
 
-(defclass tweet ()
-  ((id :type serial
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets"))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)
+      "No migration after migrating"))
 
-(multiple-value-bind (new modify old)
-    (compute-migrate-table-columns (find-class 'tweet))
-  (is new nil)
-  (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
-  (is old nil))
+(subtest "redefinition"
+  (defclass tweet ()
+    ((id :type serial
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 64)
+           :accessor tweet-user)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
 
-(migrate-table (find-class 'tweet))
+  (multiple-value-bind (new modify old)
+      (compute-migrate-table-columns (find-class 'tweet))
+    (is (mapcar #'car new) '("created_at") "Add created_at")
+    (is modify nil "No modification")
+    (is (mapcar #'car old) '("status") "Delete status"))
 
-(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil nil))
+  (is (make-migration-sql (find-class 'tweet))
+      (list "ALTER TABLE tweets DROP COLUMN status"
+            "ALTER TABLE tweets ADD COLUMN created_at CHAR(8) AFTER user"))
 
-(defclass tweet ()
-  ((id :type bigint
-       :auto-increment t
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets"))
+  (migrate-table (find-class 'tweet))
 
-(multiple-value-bind (new modify old)
-    (compute-migrate-table-columns (find-class 'tweet))
-  (is new nil)
-  (is modify '(("id" :TYPE :BIGINT :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)))
-  (is old nil))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)
+      "No migration after migrating"))
 
-(migrate-table (find-class 'tweet))
+(subtest "redefinition (modifying the column type)"
+  (defclass tweet ()
+    ((id :type serial
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 128)
+           :accessor tweet-user)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
 
-(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil nil))
+  (multiple-value-bind (new modify old)
+      (compute-migrate-table-columns (find-class 'tweet))
+    (is new nil)
+    (is modify '(("user" :TYPE (:VARCHAR 128) :AUTO-INCREMENT NIL :PRIMARY-KEY NIL :NOT-NULL NIL)))
+    (is old nil))
 
-(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    '(nil nil nil))
+  (migrate-table (find-class 'tweet))
 
-(defclass tweet ()
-  ((id :type bigint
-       :auto-increment t
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets")
-  (:unique-keys (user created-at)))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)))
 
-(is (sxql:yield (caar (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))))
-    "CREATE UNIQUE INDEX user_and_created_at ON tweets (user, created_at)")
+(subtest "redefinition of primary key"
+  (defclass tweet ()
+    ((id :type bigint
+         :auto-increment t
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 128)
+           :accessor :tweet-user)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets"))
 
-(migrate-table (find-class 'tweet))
+  (multiple-value-bind (new modify old)
+      (compute-migrate-table-columns (find-class 'tweet))
+    (is new nil)
+    (is modify '(("id" :TYPE :BIGINT :AUTO-INCREMENT T :PRIMARY-KEY T :NOT-NULL T)))
+    (is old nil))
 
-(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    '(nil nil nil))
+  (migrate-table (find-class 'tweet))
 
-(defclass tweet ()
-  ((id :type bigint
-       :auto-increment t
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets")
-  (:unique-keys (id user created-at)))
+  (is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
+      '(nil nil nil)
+      "No migration after migrating"))
 
-(destructuring-bind (add-index drop-primary-key drop-index)
-    (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-  (is (sxql:yield (car drop-index))
-      "DROP INDEX user_and_created_at ON tweets")
-  (is drop-primary-key nil)
-  (is (sxql:yield (car add-index))
-      "CREATE UNIQUE INDEX id_and_user_and_created_at ON tweets (id, user, created_at)"))
+(subtest "add :unique-keys"
+  (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+      '(nil nil nil))
 
-(migrate-table (find-class 'tweet))
+  (defclass tweet ()
+    ((id :type bigint
+         :auto-increment t
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 128)
+           :accessor :tweet-user)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets")
+    (:unique-keys (user created-at)))
 
-(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    '(nil nil nil))
+  (is (sxql:yield (caar (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))))
+      "CREATE UNIQUE INDEX user_and_created_at ON tweets (user, created_at)")
 
-(defclass tweet ()
-  ((id :type bigint
-       :auto-increment t
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (created-at :type (char 8)))
-  (:metaclass <dao-table-class>)
-  (:table-name "tweets")
-  (:unique-keys)
-  (:keys (user created-at)))
+  (migrate-table (find-class 'tweet))
 
-(destructuring-bind (add-index drop-primary-key drop-index)
-    (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-  (is (sxql:yield (car drop-index))
-      "DROP INDEX id_and_user_and_created_at ON tweets")
-  (is drop-primary-key nil)
-  (is (sxql:yield (car add-index))
-      "CREATE INDEX user_and_created_at ON tweets (user, created_at)"))
+  (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+      '(nil nil nil)))
 
-(migrate-table (find-class 'tweet))
+(subtest "modify :unique-keys"
+  (defclass tweet ()
+    ((id :type bigint
+         :auto-increment t
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 128)
+           :accessor :tweet-user)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets")
+    (:unique-keys (id user created-at)))
 
-(is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
-    '(nil nil nil))
+  (destructuring-bind (add-index drop-primary-key drop-index)
+      (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    (is (sxql:yield (car drop-index))
+        "DROP INDEX user_and_created_at ON tweets")
+    (is drop-primary-key nil)
+    (is (sxql:yield (car add-index))
+        "CREATE UNIQUE INDEX id_and_user_and_created_at ON tweets (id, user, created_at)"))
 
-(setf (find-class 'tweet) nil)
+  (migrate-table (find-class 'tweet))
 
-(defclass tweet ()
-  ((id :type bigint
-       :auto-increment t
-       :primary-key t
-       :reader tweet-id)
-   (user :type (varchar 128)
-         :accessor :tweet-user)
-   (active-p :type boolean
-             :accessor :tweet-active-p))
-   (:metaclass <dao-table-class>)
-   (:table-name "tweets"))
+  (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+      '(nil nil nil)))
 
-(migrate-table (find-class 'tweet))
+(subtest "delete :unique-keys and add :keys"
+  (defclass tweet ()
+    ((id :type bigint
+         :auto-increment t
+         :primary-key t
+         :reader tweet-id)
+     (user :type (varchar 128)
+           :accessor tweet-user)
+     (active-p :type boolean
+               :accessor tweet-active-p)
+     (created-at :type (char 8)))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets")
+    (:unique-keys)
+    (:keys (user created-at)))
 
-(is (multiple-value-list (compute-migrate-table-columns (find-class 'tweet)))
-    '(nil nil nil))
+  (destructuring-bind (add-index drop-primary-key drop-index)
+      (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+    (is (sxql:yield (car drop-index))
+        "DROP INDEX id_and_user_and_created_at ON tweets")
+    (is drop-primary-key nil)
+    (is (sxql:yield (car add-index))
+        "CREATE INDEX user_and_created_at ON tweets (user, created_at)"))
 
-(defmacro define-migration-test (before after &rest migration-sqls)
-  (let ((class (gensym "CLASS")))
-    `(let ((,class ,before))
-       (progn
-         (ensure-table-exists ,class)
-         (migrate-table ,class)
-         (let ((,class ,after))
-           (is (make-migration-sql ,class)
-               (list ,@migration-sqls)))))))
+  (migrate-table (find-class 'tweet))
 
-(setf (find-class 'tweet) nil)
-
-(define-migration-test
-    (defclass tweet ()
-      ((user :type (varchar 128)
-             :accessor :tweet-user))
-      (:metaclass <dao-table-class>)
-      (:table-name "tweets"))
-    (defclass tweet ()
-      ((user :type (varchar 128)
-             :accessor :tweet-user))
-      (:metaclass <dao-table-class>)
-      (:table-name "tweets")))
+  (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
+      '(nil nil nil)))
 
 (finalize)
