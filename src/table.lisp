@@ -435,7 +435,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
       (generate-defclass (find-class class))
       (let ((created-class (make-instance '<dao-table-class> :table-name (when table-name `(,table-name)) :generate-slots '(t))))
         (setf (class-name created-class) class)
-        (generate-defclass created-class))))
+        (prog1
+            (generate-defclass created-class)
+          (setf (find-class class) nil)))))
 
 (defmethod generate-defclass ((class <dao-table-class>) &key table-name)
   (declare (ignore table-name))
