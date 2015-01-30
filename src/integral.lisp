@@ -23,7 +23,8 @@
                 :generate-defclass)
   (:import-from :integral.database
                 :retrieve-by-raw-sql
-                :execute-sql)
+                :execute-sql
+                :*sql-log-stream*)
   (:import-from :integral.error
                 :<integral-error>
                 :<connection-not-established-error>
@@ -84,6 +85,7 @@
 
            :retrieve-by-sql
            :execute-sql
+           :*sql-log-stream*
 
            :*auto-migration-mode*
            :migrate-table
