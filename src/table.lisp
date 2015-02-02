@@ -21,6 +21,8 @@
   (:import-from :integral.database
                 :*sql-log-stream*
                 :execute-sql)
+  (:import-from :integral.type
+                :serial)
   (:import-from :integral.variable
                 :*auto-migration-mode*)
   (:import-from :integral.util
