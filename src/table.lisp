@@ -176,7 +176,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
                class))))
 
 (defmethod reinitialize-instance :around ((class <dao-table-class>) &rest initargs)
-  (let ((generate-slots (car (getf initargs :generate-slots))))
+  (let ((generate-slots (or (car (getf initargs :generate-slots)) (slot-value class 'generate-slots))))
     (if (or generate-slots
             (not (car (or (getf initargs :auto-pk)
                           '(t))))
@@ -428,13 +428,23 @@ If you want to use another class, specify it as a superclass in the usual way.")
     class))
 
 @export
-(defun generate-defclass (class)
-  (check-type class <dao-table-class>)
+(defgeneric generate-defclass (class &key table-name))
+
+(defmethod generate-defclass ((class symbol) &key table-name)
+  (if (find-class class nil)
+      (generate-defclass (find-class class))
+      (let ((created-class (make-instance '<dao-table-class> :table-name (when table-name `(,table-name)) :generate-slots '(t))))
+        (setf (class-name created-class) class)
+        (prog1
+            (generate-defclass created-class)
+          (setf (find-class class) nil)))))
+
+(defmethod generate-defclass ((class <dao-table-class>) &key table-name)
+  (declare (ignore table-name))
   (unless (initializedp class)
     (initialize-dao-table-class class))
-  `(defclass ,(class-name class) ,(remove '<dao-class>
-                                   (mapcar #'class-name (c2mop:class-direct-superclasses class))
-                                   :test #'eq)
+  `(defclass ,(class-name class) ,(remove-if #'(lambda (item) (find item '(<dao-class> standard-object)))
+                                   (mapcar #'class-name (c2mop:class-direct-superclasses class)))
      ,(iter (for slot in (database-column-slots class))
         (let ((slot-plist (slot-definition-to-plist slot)))
           (collect
