@@ -117,7 +117,9 @@
         (cond
           ((or vars attrs)
            `(,dbtype
-             ,@vars
+             ,(if (cdr vars)
+                  vars
+                  (car vars))
              ,@attrs))
           (T dbtype))))))
 
@@ -165,9 +167,9 @@
 
 (define-column-type enum (&rest candidates)
   `(:enum ,@(mapcar #'(lambda (candidate)
-                        (if (stringp candidate)
-                            candidate
-                            (symbol-name-literally candidate)))
+                        (if (symbolp candidate)
+                            (symbol-name-literally candidate)
+                            candidate))
                     candidates)))
 
 
