@@ -4,7 +4,11 @@
 
 Integral is an object relational mapper for Common Lisp based on [CL-DBI](https://github.com/fukamachi/cl-dbi) and [SxQL](https://github.com/fukamachi/sxql).
 
-<span style="color:red">Warning</span>: This software is still ALPHA quality. The APIs will be likely to change.
+## Warning
+
+This software is still ALPHA quality. The APIs will be likely to change.
+
+Should work well with MySQL/SQLite3 on SBCL/Clozure CL.
 
 ## Usage
 
