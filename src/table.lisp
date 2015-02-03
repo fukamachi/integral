@@ -22,7 +22,7 @@
                 :*sql-log-stream*
                 :execute-sql)
   (:import-from :integral.type
-                :serial)
+                :bigserial)
   (:import-from :integral.variable
                 :*auto-migration-mode*)
   (:import-from :integral.util
@@ -133,7 +133,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:documentation "Metaclass to define classes for your database-access objects as regular CLOS classes."))
 
 (defparameter *oid-slot-definition*
-  '(:name %oid :col-type serial :auto-increment t :primary-key t :readers (getoid)))
+  '(:name %oid :col-type bigserial :auto-increment t :primary-key t :readers (getoid)))
 @export 'getoid
 
 (defparameter *synced-slot-definition*
