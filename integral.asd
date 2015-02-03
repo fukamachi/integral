@@ -21,6 +21,7 @@
                :dbi
                :cl-ppcre
                :closer-mop
+               :clos-fixtures
                :split-sequence
                :group-by
                :iterate
@@ -41,6 +42,7 @@
                    (:file "sqlite3")))
                  (:file "database" :depends-on ("connection"))
                  (:file "migration" :depends-on ("connection" "table" "column" "util"))
+                 (:file "fixture" :depends-on ("integral" "table"))
                  (:file "type" :depends-on ("util"))
                  (:file "error")
                  (:file "variable")
