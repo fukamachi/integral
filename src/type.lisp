@@ -15,6 +15,9 @@
 (deftype serial () 'integer)
 
 @export
+(deftype bigserial () 'bigint)
+
+@export
 (deftype tinyint (&optional width)
   (declare (ignore width))
   'integer)
@@ -157,9 +160,15 @@
 (define-column-type serial ()
   :integer)
 
+(define-column-type bigserial ()
+  '(:bigint 20 :unsigned))
+
 (define-column-type enum (&rest candidates)
   `(:enum ,@(mapcar #'(lambda (candidate)
                         (if (stringp candidate)
                             candidate
                             (symbol-name-literally candidate)))
                     candidates)))
+
+
+

@@ -6,7 +6,8 @@
                 :database-type)
   (:import-from :integral.type
                 :cltype-to-dbtype
-                :serial)
+                :serial
+                :bigserial)
   (:import-from :integral.error
                 :<type-missing-error>)
   (:import-from :integral.util

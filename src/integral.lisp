@@ -33,6 +33,7 @@
                 :<migration-error>)
   (:import-from :integral.type
                 :serial
+                :bigserial
                 :tinyint
                 :smallint
                 :mediumint
@@ -93,6 +94,7 @@
 
            ;; DataTypes
            :serial
+           :bigserial
            :tinyint
            :smallint
            :mediumint
