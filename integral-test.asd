@@ -33,6 +33,7 @@
                  (:test-file "migration/sqlite3")
                  (:test-file "migration/mysql")
                  (:test-file "migration/postgres")
+                 (:test-file "validation")
                  (:test-file "integral"))))
 
   :defsystem-depends-on (:prove-asdf)

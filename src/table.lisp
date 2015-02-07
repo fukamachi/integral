@@ -121,6 +121,9 @@ If you want to use another class, specify it as a superclass in the usual way.")
    (table-name :type (proper-list 'string)
                :initarg :table-name
                :initform nil)
+   (validations :type list
+                :initform nil
+                :initarg :validations)
    (generate-slots :type (proper-list 'boolean)
                    :initarg :generate-slots
                    :initform nil)
@@ -386,7 +389,6 @@ If you want to use another class, specify it as a superclass in the usual way.")
   (:method ((class <dao-table-class>))
     (when (initializedp class)
       (return-from initialize-dao-table-class))
-
     (let ((db-columns (retrieve-table-column-definitions-by-name
                        (get-connection)
                        (table-name class)))

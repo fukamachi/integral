@@ -29,7 +29,8 @@
                :trivial-types)
   :components ((:module "src"
                 :components
-                ((:file "integral" :depends-on ("connection" "table" "database" "migration" "type" "error" "variable"))
+                ((:file "integral" :depends-on ("connection" "table" "validation" "database" "migration" "type" "error" "variable"))
+                 (:file "validation" :depends-on ("table"))
                  (:file "table" :depends-on ("connection" "column" "database" "variable" "util"))
                  (:file "column" :depends-on ("connection" "type"))
                  (:file "connection" :depends-on ("connection-drivers" "error"))
