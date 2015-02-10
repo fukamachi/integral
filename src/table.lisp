@@ -13,6 +13,7 @@
                 :table-column-definition
                 :table-column-inflate
                 :table-column-deflate
+                :table-column-satisfies
                 :auto-increment-p
                 :primary-key-p
                 :ghost-slot-p
@@ -78,6 +79,18 @@ If you want to use another class, specify it as a superclass in the usual way.")
             (if (find-type-deflate type)
                 (type-deflate type value)
                 value))))))
+
+@export
+(defgeneric valid-p (object)
+  (:method ((object <dao-class>))
+    (loop with valid-p = t
+          for slot in (c2mop:class-direct-slots (class-of object))
+          for slot-name = (c2mop:slot-definition-name slot)
+          when (and (slot-boundp object slot-name)
+                    (table-column-satisfies slot)
+                    (not (funcall (table-column-satisfies slot) (slot-value object slot-name))))
+            do (setf valid-p nil)
+          finally (return valid-p))))
 
 @export
 (defgeneric type-inflate (type value)
