@@ -229,8 +229,8 @@
     (setf (find-class 'tweet) nil)
 
     (define-condition <inetgral-satisfies-error-test> (simple-error) ())
-    (defun boolean-validator (value)
-      (if (typep value 'boolean)
+    (defun created-at-validator (value)
+      (if (local-time:timestamp<= value (local-time:now))
           t
           (error '<inetgral-satisfies-error-test>)))
 
@@ -247,14 +247,14 @@
              :initarg :user)
        (active-p :type boolean
                  :accessor tweet-active-p
-                 :initarg :active-p
-                 :satisfies #'boolean-validator)
+                 :initarg :active-p)
        (created-at :type local-time:timestamp
                    :col-type bigint
                    :accessor tweet-created-at
                    :initarg :created-at
                    :inflate #'local-time:universal-to-timestamp
-                   :deflate #'local-time:timestamp-to-universal)
+                   :deflate #'local-time:timestamp-to-universal
+                   :satisfies #'created-at-validator)
        (tags :type cons
              :col-type (varchar 255)
              :accessor tweet-tags
@@ -306,9 +306,8 @@
               t))))
 
     (subtest "satisfies"
-      (ok (valid-p (make-instance 'tweet :user "Rudolph-Miller" :active-p t)))
-      (ok (valid-p (make-instance 'tweet :user "Rudolph-Miller" :active-p nil)))
-      (is-error (valid-p (make-instance 'tweet :user "Rudolph-Miller" :active-p "INVALID BOOLEAN"))
+      (ok (valid-p (make-instance 'tweet :user "Rudolph-Miller" :created-at (local-time:now))))
+      (is-error (valid-p (make-instance 'tweet :user "Rudolph-Miller" :created-at (local-time:timestamp+ (local-time:now) 10 :year)))
                '<inetgral-satisfies-error-test>))))
 
 (finalize)
