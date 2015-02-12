@@ -80,16 +80,19 @@
         (slot-value column 'col-type)
         (c2mop:slot-definition-type column))))
 
+@export
 (defgeneric table-column-inflate (column)
   (:method ((column table-column-definition))
     (when (slot-boundp column 'inflate)
       (slot-value column 'inflate))))
 
+@export
 (defgeneric table-column-deflate (column)
   (:method ((column table-column-definition))
     (when (slot-boundp column 'deflate)
       (slot-value column 'deflate))))
 
+@export
 (defgeneric table-column-satisfies (column)
   (:method ((column table-column-definition))
     (when (slot-boundp column 'satisfies)
