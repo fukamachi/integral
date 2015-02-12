@@ -45,12 +45,13 @@
              :initform nil)
    (inflate :type (or function null)
             :initarg :inflate
-            :initform nil
-            :accessor inflate)
+            :initform nil)
    (deflate :type (or function null)
             :initarg :deflate
-            :initform nil
-            :accessor deflate)
+            :initform nil)
+   (satisfies :type (or function null)
+              :initarg :satisfies
+              :initform nil)
    (ghost :type boolean
           :initarg :ghost
           :initform nil
@@ -60,6 +61,7 @@
 (defmethod initialize-instance :around ((column table-column-definition) &rest initargs)
   (when (getf initargs :inflate) (setf initargs (append (list :inflate (eval (getf initargs :inflate))) initargs)))
   (when (getf initargs :deflate) (setf initargs (append (list :deflate (eval (getf initargs :deflate))) initargs)))
+  (when (getf initargs :satisfies) (setf initargs (append (list :satisfies (eval (getf initargs :satisfies))) initargs)))
   (apply #'call-next-method column initargs))
 
 (defmethod initialize-instance :after ((column table-column-definition) &key)
@@ -87,6 +89,11 @@
   (:method ((column table-column-definition))
     (when (slot-boundp column 'deflate)
       (slot-value column 'deflate))))
+
+(defgeneric table-column-satisfies (column)
+  (:method ((column table-column-definition))
+    (when (slot-boundp column 'satisfies)
+      (slot-value column 'satisfies))))
 
 @export
 (defgeneric column-info-for-create-table (column)

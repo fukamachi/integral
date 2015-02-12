@@ -17,6 +17,7 @@
                 :deflate
                 :type-inflate
                 :type-deflate
+                :valid-p
                 :initialize-dao-table-class
                 :dao-synced
                 :make-dao-instance
@@ -79,6 +80,7 @@
            :deflate
            :type-inflate
            :type-deflate
+           :valid-p
            :table-name
            :table-definition
            :ensure-table-exists

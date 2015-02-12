@@ -12,7 +12,7 @@
                 :initializedp))
 (in-package :integral-test.table)
 
-(plan 3)
+(plan 4)
 
 (disconnect-toplevel)
 
@@ -218,9 +218,21 @@
     (let ((tw (make-instance 'tweet
                              :status "Is this okay?"
                              :user "nitro_idiot")))
-      (is (tweet-user tw) "nitro_idiot"))
+      (is (tweet-user tw) "nitro_idiot"))))
 
+(subtest "slot options"
+  (dolist (driver '(:sqlite3 :mysql :postgres))
+    (diag (princ-to-string driver))
+    (disconnect-toplevel)
+
+    (connect-to-testdb driver)
     (setf (find-class 'tweet) nil)
+
+    (define-condition <inetgral-satisfies-error-test> (simple-error) ())
+    (defun created-at-validator (value)
+      (if (local-time:timestamp<= value (local-time:now))
+          t
+          (error '<inetgral-satisfies-error-test>)))
 
     (defclass tweet ()
       ((id :type serial
@@ -241,7 +253,8 @@
                    :accessor tweet-created-at
                    :initarg :created-at
                    :inflate #'local-time:universal-to-timestamp
-                   :deflate #'local-time:timestamp-to-universal)
+                   :deflate #'local-time:timestamp-to-universal
+                   :satisfies #'created-at-validator)
        (tags :type cons
              :col-type (varchar 255)
              :accessor tweet-tags
@@ -249,36 +262,52 @@
       (:metaclass <dao-table-class>)
       (:table-name "tweets"))
 
-    (migrate-table (find-class 'tweet))
+    (unless (eq driver :sqlite3)
+      (execute-sql "DROP TABLE IF EXISTS tweets"))
+
+    (let ((sxql:*use-placeholder* nil))
+      (execute-sql
+       ;; Though create table can be done with (table-definition 'tweet),
+       ;; table-definition with postgres doesn't return column type serial now.
+       (sxql:create-table :tweets
+                          ((id :type 'serial :not-null t :primary-key t)
+                           (status :type 'text)
+                           (user :type '(:varchar 64))))))
+    (migrate-table 'tweet)
 
     (defmethod type-inflate ((type (eql 'cons)) value)
-      (split-sequence:split-sequence #\, value :remove-empty-subseqs t))
+      (when value (split-sequence:split-sequence #\, value :remove-empty-subseqs t)))
 
     (defmethod type-deflate ((type (eql 'cons)) value)
-      (format nil "~{~A~^,~}" value))
+      (when value (format nil "~{~A~^,~}" value)))
 
-    (let* ((now (local-time:now))
-           (tweet (make-instance 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t :created-at now :tags '("common" "lisp"))))
-      (save-dao tweet)
-      (if (eq driver :postgres)
-          ;; cl-postgres converts boolean values into T or NIL, instead of 1 or 0.
-          (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
-              `(:active-p t :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp"))
-          (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
-              `(:active-p 1 :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp")))
-      (let ((found (find-dao 'tweet (tweet-id tweet))))
-        (is (slot-value found 'active-p)
-            t)
-        (is (slot-value found 'tags)
-            '("common" "lisp"))
-        (is-type (slot-value found 'created-at)
-                 'local-time:timestamp))
+    (subtest "inflate/deflate"
+      (let* ((now (local-time:now))
+             (tweet (create-dao 'tweet :status "Yo!" :user "Rudolph-Miller" :active-p t :created-at now :tags '("common" "lisp"))))
+        (if (eq driver :postgres)
+            ;; cl-postgres converts boolean values into T or NIL, instead of 1 or 0.
+            (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
+                `(:active-p t :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp"))
+            (is (car (retrieve-by-sql "SELECT active_p, created_at, tags FROM tweets LIMIT 1"))
+                `(:active-p 1 :created-at ,(local-time:timestamp-to-universal now) :tags "common,lisp")))
+        (let ((found (find-dao 'tweet (tweet-id tweet))))
+          (is (slot-value found 'active-p)
+              t)
+          (is (slot-value found 'tags)
+              '("common" "lisp"))
+          (is-type (slot-value found 'created-at)
+                   'local-time:timestamp))
 
-      ;; SQLite3/MySQL allow a value other than 0 or 1 for a boolean column.
-      (unless (eq driver :postgres)
-        (execute-sql
-         (sxql:update :tweets (sxql:set= :active_p 2)))
-        (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
-            t)))))
+        ;; SQLite3/MySQL allow a value other than 0 or 1 for a boolean column.
+        (unless (eq driver :postgres)
+          (execute-sql
+           (sxql:update :tweets (sxql:set= :active_p 2)))
+          (is (slot-value (find-dao 'tweet (tweet-id tweet)) 'active-p)
+              t))))
+
+    (subtest "satisfies"
+      (ok (valid-p (make-instance 'tweet :user "Rudolph-Miller" :created-at (local-time:now))))
+      (is-error (valid-p (make-instance 'tweet :user "Rudolph-Miller" :created-at (local-time:timestamp+ (local-time:now) 10 :year)))
+               '<inetgral-satisfies-error-test>))))
 
 (finalize)
