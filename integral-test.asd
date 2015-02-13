@@ -28,6 +28,7 @@
                  (:test-file "connection/sqlite3")
                  (:test-file "connection/mysql")
                  (:test-file "connection/postgres")
+                 (:test-file "connection")
                  (:test-file "type")
                  (:test-file "table")
                  (:test-file "migration/sqlite3")
