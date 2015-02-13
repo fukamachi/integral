@@ -19,4 +19,3 @@
   (ok (connection-handle *db*)))
 
 (finalize)
-
