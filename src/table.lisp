@@ -248,10 +248,11 @@ If you want to use another class, specify it as a superclass in the usual way.")
     (if (slot-value class 'table-name)
         (string (car (slot-value class 'table-name)))
         (let ((class-name (lispify (symbol-name-literally (class-name class)))))
-          (if (and (char= (aref class-name 0) #\<)
-                   (char= (aref class-name (1- (length class-name))) #\>))
-              (subseq class-name 1 (1- (length class-name)))
-              class-name))))
+          (unlispify
+           (if (and (char= (aref class-name 0) #\<)
+                    (char= (aref class-name (1- (length class-name))) #\>))
+               (subseq class-name 1 (1- (length class-name)))
+               class-name)))))
   (:method ((obj <dao-class>))
     (table-name (class-of obj)))
   (:method ((class symbol))
@@ -295,7 +296,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
              (query (apply #'sxql:make-statement
                            :create-table
                            (list
-                            (intern (unlispify (table-name class)) :keyword)
+                            (intern (table-name class) :keyword)
                             :if-not-exists if-not-exists)
                            (mapcar
                             #'column-info-for-create-table
