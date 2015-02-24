@@ -295,7 +295,7 @@ If you want to use another class, specify it as a superclass in the usual way.")
              (query (apply #'sxql:make-statement
                            :create-table
                            (list
-                            (intern (table-name class) :keyword)
+                            (intern (unlispify (table-name class)) :keyword)
                             :if-not-exists if-not-exists)
                            (mapcar
                             #'column-info-for-create-table

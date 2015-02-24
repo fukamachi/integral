@@ -139,7 +139,17 @@
     (is (table-class-indices (find-class 'tweet))
         '((:unique-key t :primary-key t :columns ("id"))
           (:unique-key t :primary-key nil :columns ("id"))
-          (:unique-key t :primary-key nil :columns ("status" "user"))))))
+          (:unique-key t :primary-key nil :columns ("status" "user"))))
+
+    (setf (find-class 'lispify-name-tweet) nil)
+    (defclass lispify-name-tweet ()
+      ((id :type integer
+           :primary-key t
+           :auto-increment t
+           :reader tweet-id))
+      (:metaclass <dao-table-class>))
+    (is (table-definition 'lispify-name-tweet)
+        "CREATE TABLE `lispify_name_tweet` (`id` INTEGER NOT NULL PRIMARY KEY)")))
 
 (subtest ":generate-slots t"
   (dolist (driver '(:sqlite3 :mysql :postgres))
