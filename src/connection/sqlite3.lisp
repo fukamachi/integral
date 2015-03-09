@@ -33,7 +33,7 @@
                            (sxql:yield
                             (select ((:as primary-key :last_insert_id))
                               (from (intern table-name :keyword))
-                              (order-by primary-key)
+                              (order-by (:desc primary-key))
                               (limit 1))))))
             :|last_insert_id|
             0))))
