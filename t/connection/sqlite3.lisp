@@ -49,6 +49,9 @@
       "Should be 1 after inserting")
   (setf *conn* (reconnect-to-testdb :sqlite3))
   (is (last-insert-id *conn* "users") 1
-      "Should be still 1 after reconnecting"))
+      "Should be still 1 after reconnecting")
+  (dbi:do-sql *conn* "INSERT INTO users (first_name, family_name) VALUES ('Rudolph', 'Miller')")
+  (is (last-insert-id *conn* "users") 2
+      "Should be 2 after inserting once more."))
 
 (finalize)

@@ -45,6 +45,9 @@
       "Should be 1 after inserting")
   (setf *conn* (reconnect-to-testdb :postgres))
   (is (last-insert-id *conn* "users" "id") 1
-      "Should be still 1 after reconnecting"))
+      "Should be still 1 after reconnecting")
+  (dbi:do-sql *conn* "INSERT INTO \"users\" (first_name, family_name) VALUES ('Rudolph', 'Miller')")
+  (is (last-insert-id *conn* "users" "id") 2
+      "Should be 2 after reconnecting once more."))
 
 (finalize)
