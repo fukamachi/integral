@@ -303,8 +303,8 @@ If you want to use another class, specify it as a superclass in the usual way.")
                             (database-column-slots class))
                            (append
                             (if (slot-boundp class 'primary-key)
-                                (list (apply #'sxql:primary-key
-                                             (slot-value class 'primary-key)))
+                                (list (sxql:primary-key
+                                       (mapcar #'unlispify (car (slot-value class 'primary-key)))))
                                 nil)
                             (if (slot-boundp class 'unique-keys)
                                 (mapcar (lambda (key)

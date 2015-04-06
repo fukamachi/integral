@@ -149,7 +149,22 @@
            :reader tweet-id))
       (:metaclass <dao-table-class>))
     (is (table-definition 'lispify-name-tweet)
-        "CREATE TABLE `lispify_name_tweet` (`id` INTEGER NOT NULL PRIMARY KEY)")))
+        "CREATE TABLE `lispify_name_tweet` (`id` INTEGER NOT NULL PRIMARY KEY)")
+
+  (defclass tweet ()
+    ((id :type serial
+         :reader tweet-id)
+     (status :type string
+             :accessor :tweet-status)
+     (user-name :type (varchar 64)
+                :accessor :tweet-user-name))
+    (:metaclass <dao-table-class>)
+    (:table-name "tweets")
+    (:unique-keys)
+    (:primary-key (user-name)))
+
+  (is (table-definition 'tweet)
+      "CREATE TABLE `tweets` (`id` INTEGER, `status` TEXT, `user_name` VARCHAR(64), PRIMARY KEY (`user_name`))")))
 
 (subtest ":generate-slots t"
   (dolist (driver '(:sqlite3 :mysql :postgres))
