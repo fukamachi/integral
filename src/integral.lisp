@@ -62,6 +62,8 @@
   (:import-from :integral.util
                 :lispify
                 :unlispify)
+  (:import-from :dbi
+                :with-transaction)
   (:import-from :sxql.sql-type
                 :sql-statement)
   (:import-from :alexandria
@@ -154,10 +156,11 @@
         (let ((pk-value (get-pk-value)))
           (when (integerp pk-value)
             (setf (slot-value obj serial-key) (1+ pk-value)))))
-      (execute-sql (make-insert-sql obj))
-      (unless sqlite3-p
-        (when-let (pk-value (get-pk-value))
-          (setf (slot-value obj serial-key) pk-value)))
+      (with-transaction (get-connection)
+        (execute-sql (make-insert-sql obj))
+        (unless sqlite3-p
+          (when-let (pk-value (get-pk-value))
+            (setf (slot-value obj serial-key) pk-value))))
       (setf (dao-synced obj) T)
       obj)))
 
