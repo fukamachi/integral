@@ -132,7 +132,7 @@
       (make-set-clause obj)))
 
 (defun make-set-clause (obj)
-  (apply #'set=
+  (apply #'make-clause :set=
          (mapcan
           #'(lambda (slot-name)
               (if (slot-boundp obj slot-name)
