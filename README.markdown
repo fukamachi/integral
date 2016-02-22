@@ -1,3 +1,7 @@
+# IMPORTANT NOTICE
+
+**Integral is not recommended for a new project.** Consider using [Mito](https://github.com/fukamachi/mito) instead.
+
 # Integral
 
 [![Build Status](https://travis-ci.org/fukamachi/integral.svg?branch=master)](https://travis-ci.org/fukamachi/integral)
