@@ -3,6 +3,8 @@
   (:use :cl
         :sxql
         :iterate)
+  (:shadowing-import-from :iterate
+                          :for)
   (:import-from :integral.table
                 :<dao-table-class>
                 :<dao-class>
