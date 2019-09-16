@@ -186,31 +186,38 @@
                                          (getf (cdr column) :primary-key))
                                        column-definitions)))
          (slots (database-column-slots class)))
-    (flet ((slot-column-position-arg (name)
-             (let ((pos (position name slots
-                                  :key (lambda (slot)
-                                         (symbol-name-literally (table-column-name slot)))
-                                  :test #'string=)))
-               (cond
-                 ((= pos 0) '(:first t))
-                 ((null pos) nil)
-                 (T (list :after
-                          (intern (string (unlispify (table-column-name (nth (1- pos) slots))))
-                                  :keyword)))))))
+    (labels ((slot-column-position (name)
+               (position name slots
+                         :key (lambda (slot)
+                                (symbol-name-literally (table-column-name slot)))
+                         :test #'string=))
+             (slot-column-position-arg (pos)
+                 (cond
+                   ((= pos 0) '(:first t))
+                   ((null pos) nil)
+                   (T (list :after
+                            (intern (string (unlispify (table-column-name (nth (1- pos) slots))))
+                                    :keyword))))))
       (multiple-value-bind (new-columns modify-columns old-columns)
           (compute-migrate-table-columns class)
         ;; TODO: Return DROP TABLE and CREATE TABLE queries if all columns will be dropped.
         (list
          (if new-columns
-             (apply #'make-statement :alter-table (intern (table-name class) :keyword)
-                    (mapcar (lambda (column)
-                              (rplaca column (intern (string (unlispify (car column))) :keyword))
-                              (apply #'add-column
-                                     (append column
-                                             (if (eq (database-type) :postgres)
-                                                 nil
-                                                 (slot-column-position-arg (car column))))))
-                            new-columns))
+             (let ((clause-list (mapcar (lambda (column)
+                                          (rplaca column (intern (string (unlispify (car column))) :keyword))
+                                          (let ((pos (unless (eq (database-type) :postgres)
+                                                       (slot-column-position (car column)))))
+                                            (list pos
+                                                  (apply #'add-column
+                                                         (append column
+                                                                 (if (eq (database-type) :postgres)
+                                                                     nil
+                                                                     (slot-column-position-arg pos)))))))
+                                        new-columns)))
+               (apply #'make-statement :alter-table (intern (table-name class) :keyword)
+                      (if (eq (database-type) :postgres)
+                          (mapcar #'cadr clause-list)
+                          (mapcar #'cadr (sort clause-list #'< :key #'car)))))
              nil)
          (if modify-columns
              (apply #'make-statement :alter-table (intern (table-name class) :keyword)

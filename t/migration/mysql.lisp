@@ -12,7 +12,7 @@
                 :table-definition))
 (in-package :integral-test.migration.mysql)
 
-(plan 10)
+(plan 11)
 
 (disconnect-toplevel)
 
@@ -240,5 +240,28 @@
 
   (is (integral.migration::generate-migration-sql-for-table-indices (find-class 'tweet))
       '(nil nil nil)))
+
+(subtest "redifinition to the totally different table"
+  (defclass tweet ()
+    ((user :type (varchar 128)
+           :accessor tweet-user))
+    (:metaclass <dao-table-class>)
+    (:unique-keys)
+    (:keys)
+    (:table-name "tweets"))
+
+  (migrate-table (find-class 'tweet))
+
+  (defclass tweet ()
+    ((created-at :type (char 8))
+     (active-p :type boolean
+               :accessor tweet-active-p))
+    (:metaclass <dao-table-class>)
+    (:unique-keys)
+    (:keys)
+    (:table-name "tweets"))
+
+  (is (cadr (make-migration-sql (find-class 'tweet)))
+      "ALTER TABLE tweets ADD COLUMN created_at CHAR(8) AFTER %oid, ADD COLUMN active_p BOOLEAN AFTER created_at"))
 
 (finalize)
